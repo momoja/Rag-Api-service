@@ -11,10 +11,11 @@ dist/
 # uv
 uv.lock.tmp
 
-# Environment
-.env
-.env.*
-!.env.example
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
 
 # OS / editor
 .DS_Store

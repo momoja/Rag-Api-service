@@ -1,0 +1,16 @@
+variable "region" {
+  description = "AWS region for all resources"
+  type        = string
+}
+
+variable "project" {
+  description = "Project name; prefixes all resource names"
+  type        = string
+  default     = "rag-agent"
+}
+
+variable "environment" {
+  description = "Deployment environment (dev, staging, prod)"
+  type        = string
+  default     = "dev"
+}
