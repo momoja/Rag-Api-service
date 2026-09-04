@@ -1,0 +1,16 @@
+# rag-agent local dev environment.
+#
+# One service today: the app/dev container (Lambda-parity Python 3.12 image).
+# Sibling services join this file as they appear — vector store (ch8),
+# local S3/queue emulators for ingestion (ch6) — and reach each other by
+# service name on the default compose network. Nothing is network-bound yet,
+# so no explicit networks or volumes are declared.
+#
+# The image is hermetic (deps + code baked). There is intentionally no bind
+# mount: a host mount would mask the baked environment with the Windows-built
+# .venv. Rebuild for code changes — the dependency layer is cached.
+
+services:
+  app:
+    build: .
+    image: rag-agent:dev

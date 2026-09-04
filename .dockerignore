@@ -1,0 +1,15 @@
+# Build context exclusions — keep the image build context to what the
+# Dockerfile actually COPYs. .venv is Windows-built on this host and must
+# never reach the Linux image (it would mask the container's own venv).
+
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+.git/
+.terraform/
+infra/
+docs/
+artifacts/

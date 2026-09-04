@@ -29,7 +29,24 @@ uv run ruff check .   # lint
 uv run ruff format --check .   # formatting
 ```
 
-Expected: tests pass (2 passed), ruff reports no violations.
+## Docker (Lambda-parity dev environment)
+
+The project's compute runs on the AWS Lambda `python3.12` runtime from
+Chapter 4 on, so the container image uses the same Python lineage. The image
+is hermetic — dependencies and source are baked in (no bind mounts), and the
+dependency layer is cached until `pyproject.toml` / `uv.lock` change.
+
+Requires Docker Desktop (daemon running).
+
+```powershell
+docker compose build              # build rag-agent:dev
+docker compose run --rm app       # run the test suite in the container
+docker compose run --rm app uv run ruff check .   # lint in the container
+docker compose run --rm app uv run python -c "import rag_agent; print(rag_agent.__version__)"
+```
+
+`docker compose up` has no long-running process yet; it becomes the workflow
+once Chapter 4+ services (Lambda handlers, later the vector store) exist.
 
 ## Progress
 
