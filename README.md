@@ -29,6 +29,8 @@ uv run ruff check .   # lint
 uv run ruff format --check .   # formatting
 ```
 
+Expected: tests pass (22 passed), ruff reports no violations.
+
 ## Docker (Lambda-parity dev environment)
 
 The project's compute runs on the AWS Lambda `python3.12` runtime from
@@ -48,14 +50,25 @@ docker compose run --rm app uv run python -c "import rag_agent; print(rag_agent.
 `docker compose up` has no long-running process yet; it becomes the workflow
 once Chapter 4+ services (Lambda handlers, later the vector store) exist.
 
+## Lambda (container images)
+
+Lambda functions are container images built from
+`public.ecr.aws/lambda/python:3.12` — the exact production runtime.
+Build + local-invoke example (Chapter 4's `presign-document`):
+
+```powershell
+docker build -f lambda/presign_document/Dockerfile -t rag-agent-presign:dev .
+docker run --rm --entrypoint python -e DOCUMENTS_BUCKET=rag-agent-dev-documents-000000000000 rag-agent-presign:dev -c "from handler import lambda_handler; print(lambda_handler({'key':'docs/a.pdf'}, {}))"
+```
+
 ## Progress
 
 | Chapter | Topic | Status |
 |---|---|---|
 | 1 | Project foundation | Done |
-| 2 | Terraform / IaC (S3 + IAM) | Planned |
-| 3 | Docker / local development | Planned |
-| 4 | AWS Lambda + Python | Planned |
+| 2 | Terraform / IaC | Done* |
+| 3 | Docker / local development | Done |
+| 4 | AWS Lambda + Python | Done |
 | 5 | API layer | Planned |
 | 6 | Document ingestion | Planned |
 | 7 | Embeddings | Planned |
@@ -64,6 +77,9 @@ once Chapter 4+ services (Lambda handlers, later the vector store) exist.
 | 10 | LLM / generation | Planned |
 | 11 | Complete RAG pipeline | Planned |
 | 12 | Production improvements | Planned |
+
+\*Chapter 2 infrastructure is defined and planned but **not applied** — no AWS
+resources exist until you approve `terraform apply`.
 
 ## Decisions
 

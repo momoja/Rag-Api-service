@@ -1,52 +1,60 @@
 # Project Status — 2026-09-03
 
-Handoff record so any session (or clone) can resume Chapter 3 without prior
-conversation context. Pair with the git log and `docs/decisions/` for decisions.
+Handoff record so any session (or clone) can resume without prior conversation
+context. Pair with the git log and `docs/decisions/`.
 
 ## Current state
 
-- **Chapter 1 — Foundation: DONE** (commit `684fc89`). uv-managed Python 3.12
-  project (`rag-agent`), `pytest` + `ruff`, hatchling backend, ADR 0001.
-- **Chapter 2 — Terraform: DONE, NOT APPLIED** (commit `bb8b87c`). `infra/dev/`
-  defines the documents S3 bucket only. `terraform plan` verified:
-  **4 to add, 0 to change, 0 to destroy**. No AWS resources exist yet.
-- **Next: Chapter 3 — Docker / local development.** User said "we will continue
-  to chapter 3 ultérieurement" (later).
+- **Chapter 1 — Foundation: DONE** (`684fc89`). uv/Python 3.12 (`rag-agent`),
+  pytest+ruff, hatchling, ADR 0001.
+- **Chapter 2 — Terraform: DONE, NOT APPLIED** (`bb8b87c`). `infra/dev/`
+  defines documents bucket + (ch4) Lambda resources. `terraform plan`:
+  **9 to add, 0 to change/destroy**. No AWS resources exist yet.
+- **Chapter 3 — Docker: DONE** (`38828bd`). Lambda-parity dev image
+  (`rag-agent:dev`, python:3.12-slim + uv), compose `app` service.
+- **Chapter 4 — First Lambda: DONE** (latest commit). `presign-document`
+  container Lambda (public.ecr.aws/lambda/python:3.12): `rag_agent/storage.py`
+  testable core (presign upload URL, SigV4 forced), thin handler, ECR+IAM+log
+  group+function in `infra/dev/lambda.tf`. Host: 22 pytest green; container
+  invocation verified 200/400/400/400 with SigV4 URL.
+- **Next: Chapter 5 — API layer** (API Gateway + Lambda integration).
 
 ## Verified environment facts (2026-09-03)
 
-- OS: Windows 11; shell/cmd via this harness (PowerShell-friendly commands).
-- git 2.53, uv 0.12.9 (manages Python 3.12.9 in `.venv`), Python 3.14 system.
-- Terraform v1.16.0, AWS CLI 2.36.30.
+- OS: Windows 11; git 2.53, uv 0.12.9, Python 3.14 system (3.12.9 in .venv),
+  Terraform 1.16.0, AWS CLI 2.36.30, Docker 29.4.1 (Desktop).
 - AWS creds valid: account `058264314263`, IAM user `terraform-myapp`.
-- Region decision: **us-east-1** (Bedrock/AOSS coverage; CLI default was
-  us-west-1 — do not use).
+- Region decision: **us-east-1** (CLI default was us-west-1 — do not use).
 
 ## Decisions binding later chapters
 
 1. **Self-managed RAG core on AWS** (ADR 0001): we write ingestion → chunking →
-   embeddings → retrieval → generation; AWS supplies S3/Lambda/Bedrock models/
-   vector store. Bedrock Knowledge Bases (managed) explicitly rejected.
-2. Region: us-east-1 everywhere.
-3. Terraform state: **local now**; when the user approves the first `apply`,
-   bootstrap S3 remote state + DynamoDB lock table, flip backend,
-   `init -migrate-state`, then apply. Apply must be explicitly requested.
-4. IAM deferred from ch2 to ch4 (nothing to run yet) — deliberate.
-5. Vector store choice deferred to ch8 (AOSS vs pgvector); embedding dimension
-   contract (Titan v2 = 1024) must drive the index mapping.
-6. Package `rag_agent` (not `app`) to avoid Lambda package collisions.
+   embeddings → retrieval → generation; AWS supplies S3/Lambda/Bedrock/vector
+   store. Managed Bedrock KB explicitly rejected.
+2. Region: us-east-1 everywhere. 3. Terraform state: local; when first `apply`
+   is approved: bootstrap S3 state bucket + DynamoDB lock, migrate backend,
+   then apply. Apply only on explicit user request.
+4. IAM added ch4 with Lambda (least privilege, scoped logs + s3:PutObject).
+5. Vector store choice deferred to ch8; embedding dimension contract
+   (Titan v2 = 1024) drives index mapping.
+6. Package `rag_agent` (not `app`). 7. boto3 pinned >=1.35,<2 in pyproject.
+8. Lambda deploys = container images (Windows-host friendly); presign handler
+   forces SigV4 (SigV2 refused on new buckets — regression test added).
+9. Ch3/4 committed together on user move-on; ch3 was explicitly no-commit
+   during review.
 
 ## Verify commands
 
 ```powershell
-uv run pytest
-terraform -chdir=infra/dev fmt -check -recursive
+uv run pytest                      # 22 passed
+uv run ruff check . && uv run ruff format --check .
 terraform -chdir=infra/dev validate
-terraform -chdir=infra/dev plan -var-file=dev.tfvars
+terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 9 to add
+docker compose build && docker compose run --rm app    # dev image tests
 ```
 
-## Chapter 3 preview (from guide + reference analysis)
+## Chapter 5 preview
 
-Dockerfile(s) for local dev parity with the Lambda runtime (`python:3.12`),
-compose file, volume/environment conventions. Reference repo has no root
-Docker; sibling variants Dockerize Streamlit only — we adapt, don't copy.
+API Gateway (HTTP API) endpoints: POST /documents/upload-url → presign
+Lambda; request validation; error mapping; Lambda event shapes change from
+direct-invocation to API-GW proxy — handler update + tests.
