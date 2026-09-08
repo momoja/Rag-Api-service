@@ -91,13 +91,16 @@ resource "aws_lambda_function" "ingest_document" {
   depends_on = [aws_cloudwatch_log_group.ingest_lambda]
 }
 
-# S3 -> Lambda event sources. One notification resource carries both targets
-# (a bucket allows exactly one aws_s3_bucket_notification):
+# S3 -> Lambda event sources. One notification resource carries all three
+# targets (a bucket allows exactly one aws_s3_bucket_notification):
 # 1. uploads/* (any suffix) -> ingest-document: raw document uploads, the
 #    keys presign mints (ch5/ch6).
-# 2. processed/*.jsonl -> embed-document: each document's chunks.jsonl (ch7);
-#    the .jsonl suffix excludes metadata.json. Its embedded/ writes are
-#    outside both filters, so no stage can retrigger the pipeline.
+# 2. processed/*.jsonl -> embed-document: each document's chunks.jsonl
+#    (ch7); the .jsonl suffix excludes metadata.json.
+# 3. embedded/*.jsonl -> index-document: each document's embeddings.jsonl
+#    (ch8) -> pgvector (rag_chunks in the RDS store, vector_store.tf).
+#    Every stage's own writes land outside the other stages' filters, so
+#    no stage can retrigger the pipeline.
 resource "aws_s3_bucket_notification" "documents_ingest" {
   bucket = aws_s3_bucket.documents.id
 
@@ -114,9 +117,20 @@ resource "aws_s3_bucket_notification" "documents_ingest" {
     filter_suffix       = ".jsonl"
   }
 
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.index_document.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "embedded/"
+    filter_suffix       = ".jsonl"
+  }
+
   # Without these, S3 is not allowed to invoke the functions and events
   # silently never reach the pipeline (notifications go nowhere).
-  depends_on = [aws_lambda_permission.ingest_s3, aws_lambda_permission.embed_s3]
+  depends_on = [
+    aws_lambda_permission.ingest_s3,
+    aws_lambda_permission.embed_s3,
+    aws_lambda_permission.index_s3,
+  ]
 }
 
 resource "aws_lambda_permission" "ingest_s3" {

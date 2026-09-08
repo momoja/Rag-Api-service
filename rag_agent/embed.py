@@ -47,6 +47,7 @@ EMBEDDING_DIMENSIONS = 1024
 EMBEDDING_NORMALIZE = True  # unit vectors: cosine similarity == dot product
 EMBEDDED_PREFIX = "embedded/"
 CHUNKS_SUFFIX = "/chunks.jsonl"
+EMBEDDINGS_SUFFIX = "/embeddings.jsonl"
 
 DEFAULT_RETRY_ATTEMPTS = 3
 _MAX_RETRY_DELAY_SECONDS = 8.0
@@ -234,7 +235,7 @@ def embed_document(
     response = s3.get_object(Bucket=bucket, Key=chunks_key)
     chunks = _parse_chunks(response["Body"].read())
 
-    embedded_key = f"{EMBEDDED_PREFIX}{document_id}/embeddings.jsonl"
+    embedded_key = f"{EMBEDDED_PREFIX}{document_id}{EMBEDDINGS_SUFFIX}"
     records: list[dict] = []
     for chunk in chunks:
         result = embed_texts(

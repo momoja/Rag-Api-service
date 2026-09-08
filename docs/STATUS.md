@@ -46,8 +46,8 @@ context. Pair with the git log and `docs/decisions/`.
   failures re-raise for S3 batch retry. Verify: 94 pytest (host + dev
   image), ruff clean, terraform plan 22 to add (8 new), ingest image
   builds and handler imports (pypdf 5.9.0 baked). Not applied.
-- **Chapter 7 — Embeddings: DONE** (working tree, uncommitted — commit on
-  move-on). Why embeddings: retrieval (ch9) must rank chunks by semantic
+- **Chapter 7 — Embeddings: DONE** (`afcbbcc`). Why embeddings: retrieval
+  (ch9) must rank chunks by semantic
   similarity, not keyword overlap; embedding at ingest time makes a query a
   vector lookup away. New `embed-document` Lambda (`infra/dev/
   embed_lambda.tf`, `lambda/embed_document/`) — a second target on the
@@ -65,8 +65,26 @@ context. Pair with the git log and `docs/decisions/`.
   segment). Verify: 120 pytest (host + dev image), ruff clean, terraform
   plan 28 to add (6 new), embed image builds + handler imports. Not
   applied.
-- **Next: Chapter 8 — Vector storage** (loads `embedded/<doc_id>/
-  embeddings.jsonl`; store choice still deferred — decision 5).
+- **Chapter 8 — Vector storage: DONE** (working tree, uncommitted — commit
+  on move-on). Store: managed Postgres on RDS (`infra/dev/vector_store.tf`,
+  t4g.micro, PG 16.4, private in the default VPC) running the pgvector
+  extension; RDS over Aurora/OpenSearch for cost + local parity. Core
+  `rag_agent/vector.py`: `rag_chunks` table (document_id, chunk_index,
+  text, `vector(1024)`, char offsets, created_at; UNIQUE(document_id,
+  chunk_index)), HNSW index (`vector_cosine_ops` — incremental inserts,
+  no rebuild), cosine-distance search (`<=>`) with optional document_id
+  filter, `replace_document` delete-then-insert (idempotent re-index).
+  New `index-document` Lambda (`lambda/index_document/`) — third
+  notification target (`embedded/*.jsonl`) — VPC-attached, reads the RDS
+  password from Secrets Manager at startup (never env); compose gained a
+  `pgvector/pgvector:pg16` db service mirroring RDS (same SQL/driver both
+  sides). Testing norm change: `tests/test_vector_integration.py` (11
+  tests) runs against the live compose DB and auto-skips when no DB
+  answers — plain host suite stays green offline; verify step starts the
+  db first. Verify: 156 pytest (host, incl. live-DB integration), ruff
+  clean, terraform plan 42 to add (14 new). Not applied.
+- **Next: Chapter 9 — Retrieval** (query embedding -> vector search ->
+  top-K -> context; tests retrieval independently, ch10 wires the LLM).
 
 ## Verified environment facts (2026-09-03)
 
@@ -120,25 +138,36 @@ context. Pair with the git log and `docs/decisions/`.
     exponential backoff, transient codes only; ValidationException ->
     ValueError -> skip; AccessDenied/misconfig intentionally NOT skipped
     (fails loud until fixed). Bedrock IAM scoped to the model ARN.
+15. Vector store (ch8): Postgres 16 + pgvector on RDS (t4g.micro, default
+    VPC, not public). Schema owned by code (`rag_agent.vector.
+    ensure_schema`): `rag_chunks` with `vector(1024)` + HNSW
+    (`vector_cosine_ops`); search = cosine distance ascending, metadata as
+    real columns with WHERE filters. Credentials in Secrets Manager, read
+    by the index Lambda at startup (SECRET_ARN); the Lambda runs in-VPC.
+    Local parity: compose `db` service = pgvector image; integration tests
+    gated on a reachable DB (skip when offline), so the default host
+    suite stays hermetic.
 
 ## Verify commands
 
 ```powershell
-uv run pytest                      # 120 passed
+uv run pytest                      # 156 passed (integration skipped without DB)
 uv run ruff check . && uv run ruff format --check .
 terraform -chdir=infra/dev validate
-terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 28 to add
-docker compose build && docker compose run --rm app    # dev image tests (120)
+terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 42 to add
+docker compose up -d db            # pgvector (localhost:5432)
+uv run pytest                      # 156 passed incl. live-DB integration
+docker compose build && docker compose run --rm app    # dev image tests (156)
 docker run --rm -e DOCUMENTS_BUCKET=<bucket> -v "$env:USERPROFILE\.aws:/root/.aws:ro" `
   --entrypoint python rag-agent-presign:dev -c "<v2-event script>"  # 200/400/400/400
 ```
 
-## Chapter 8 preview
+## Chapter 9 preview
 
-Vector storage over Chapter 7 output: load each `embedded/<document_id>/`
-embeddings.jsonl (1024-dim vectors + text) into the managed vector store —
-choice (OpenSearch Serverless / pgvector / other) deferred to this chapter
-(decision 5). Cover dimensions, indexing, metadata, similarity search, and
-filtering; test retrieval independently (ch9). Real end-to-end smoke test
-(PUT to uploads/ -> processed/ -> embedded/ -> vectors) lands at the first
-apply — no AWS resources exist yet to exercise.
+Retrieval, built independently: user question -> embed the query with the
+same Titan model -> vector search (rag_chunks, cosine, top-K) -> ranked
+chunks with text for context. Exercise the loop against the compose DB
+(and, at apply time, the real S3 -> pipeline -> RDS chain) before any LLM
+is wired; no Bedrock generation yet — that is Chapter 10. The vector
+dimensions/indexing/similarity semantics this store proves are the query
+path's contract.
