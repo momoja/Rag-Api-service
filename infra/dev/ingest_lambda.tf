@@ -91,9 +91,13 @@ resource "aws_lambda_function" "ingest_document" {
   depends_on = [aws_cloudwatch_log_group.ingest_lambda]
 }
 
-# S3 -> Lambda event source. Prefix-filtered to uploads/ (matching the
-# presign key policy in rag_agent.storage), so only raw document uploads
-# invoke the pipeline — processed/ staging writes and anything else never do.
+# S3 -> Lambda event sources. One notification resource carries both targets
+# (a bucket allows exactly one aws_s3_bucket_notification):
+# 1. uploads/* (any suffix) -> ingest-document: raw document uploads, the
+#    keys presign mints (ch5/ch6).
+# 2. processed/*.jsonl -> embed-document: each document's chunks.jsonl (ch7);
+#    the .jsonl suffix excludes metadata.json. Its embedded/ writes are
+#    outside both filters, so no stage can retrigger the pipeline.
 resource "aws_s3_bucket_notification" "documents_ingest" {
   bucket = aws_s3_bucket.documents.id
 
@@ -103,9 +107,16 @@ resource "aws_s3_bucket_notification" "documents_ingest" {
     filter_prefix       = "uploads/"
   }
 
-  # Without this, S3 is not allowed to invoke the function and every upload
-  # silently never reaches the pipeline (the notification goes nowhere).
-  depends_on = [aws_lambda_permission.ingest_s3]
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.embed_document.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "processed/"
+    filter_suffix       = ".jsonl"
+  }
+
+  # Without these, S3 is not allowed to invoke the functions and events
+  # silently never reach the pipeline (notifications go nowhere).
+  depends_on = [aws_lambda_permission.ingest_s3, aws_lambda_permission.embed_s3]
 }
 
 resource "aws_lambda_permission" "ingest_s3" {

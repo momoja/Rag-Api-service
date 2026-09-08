@@ -28,8 +28,8 @@ context. Pair with the git log and `docs/decisions/`.
   dev image copies `lambda/`. Verify: 37 pytest green (host + dev image);
   container invocation with v2 events 200 (SigV4) + 400/400/400; terraform
   plan 14 to add (5 API GW resources). Not applied.
-- **Chapter 6 — Document ingestion: DONE** (working tree, uncommitted —
-  commit on move-on). uploads/ key policy enforced in `rag_agent/storage.py`
+- **Chapter 6 — Document ingestion: DONE** (`65a825c`). uploads/ key policy
+  enforced in `rag_agent/storage.py`
   (presign now mints `uploads/*` keys only — ch5 contract extension);
   new `ingest-document` Lambda (`infra/dev/ingest_lambda.tf`,
   `lambda/ingest_document/`) triggered by S3 bucket notification
@@ -46,8 +46,27 @@ context. Pair with the git log and `docs/decisions/`.
   failures re-raise for S3 batch retry. Verify: 94 pytest (host + dev
   image), ruff clean, terraform plan 22 to add (8 new), ingest image
   builds and handler imports (pypdf 5.9.0 baked). Not applied.
-- **Next: Chapter 7 — Embeddings** (reads `processed/<doc_id>/chunks.jsonl`
-  + `metadata.json` from Chapter 6's output).
+- **Chapter 7 — Embeddings: DONE** (working tree, uncommitted — commit on
+  move-on). Why embeddings: retrieval (ch9) must rank chunks by semantic
+  similarity, not keyword overlap; embedding at ingest time makes a query a
+  vector lookup away. New `embed-document` Lambda (`infra/dev/
+  embed_lambda.tf`, `lambda/embed_document/`) — a second target on the
+  bucket notification (`processed/*.jsonl`: chunks.jsonl only, never
+  metadata.json) — reads each chunks file and embeds every chunk via
+  Bedrock Titan (`rag_agent/embed.py`: `amazon.titan-embed-text-v2:0`,
+  1024 dims, normalize=True — the decision-5 contract), staging
+  `embedded/<document_id>/embeddings.jsonl` (index/text/vector/token count/
+  char offsets; text rides along so ch9 returns context without a second
+  read). Retry: 3 attempts, exponential backoff, transient codes only
+  (throttle, model timeout/error, service/internal unavailability); model
+  input rejections skip the doc, misconfig (AccessDenied) fails loud.
+  Path-derived keys -> idempotent; single PutObject after all chunks embed
+  -> no partial writes. IAM scoped to the foundation-model ARN (no account
+  segment). Verify: 120 pytest (host + dev image), ruff clean, terraform
+  plan 28 to add (6 new), embed image builds + handler imports. Not
+  applied.
+- **Next: Chapter 8 — Vector storage** (loads `embedded/<doc_id>/
+  embeddings.jsonl`; store choice still deferred — decision 5).
 
 ## Verified environment facts (2026-09-03)
 
@@ -92,24 +111,34 @@ context. Pair with the git log and `docs/decisions/`.
     S3 never retries them forever; non-ValueError failures re-raise so the
     notification retries the batch (idempotent via decision 11).
     `CompleteMultipartUpload` counts as an object creation.
+14. Embeddings (ch7): separate `embed-document` Lambda, triggered by the
+    second bucket-notification target (`processed/` + `.jsonl` suffix, so
+    exactly chunks.jsonl). Titan V2 config fixed in `rag_agent/embed.py`:
+    model `amazon.titan-embed-text-v2:0`, 1024 dims, normalize=True.
+    Vectors staged `embedded/<document_id>/embeddings.jsonl` with chunk
+    text (ch9 context) + char offsets + token count. Retry = 3 attempts,
+    exponential backoff, transient codes only; ValidationException ->
+    ValueError -> skip; AccessDenied/misconfig intentionally NOT skipped
+    (fails loud until fixed). Bedrock IAM scoped to the model ARN.
 
 ## Verify commands
 
 ```powershell
-uv run pytest                      # 94 passed
+uv run pytest                      # 120 passed
 uv run ruff check . && uv run ruff format --check .
 terraform -chdir=infra/dev validate
-terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 22 to add
-docker compose build && docker compose run --rm app    # dev image tests (94)
+terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 28 to add
+docker compose build && docker compose run --rm app    # dev image tests (120)
 docker run --rm -e DOCUMENTS_BUCKET=<bucket> -v "$env:USERPROFILE\.aws:/root/.aws:ro" `
   --entrypoint python rag-agent-presign:dev -c "<v2-event script>"  # 200/400/400/400
 ```
 
-## Chapter 7 preview
+## Chapter 8 preview
 
-Embeddings over Chapter 6 output: read each `processed/<document_id>/`
-chunks.jsonl + metadata.json, embed chunks with Amazon Titan Text Embeddings
-v2 (1024-dim contract, decision 5) with batching/retry, then store vectors
-in the (Chapter 8) vector store. Real end-to-end ingestion smoke test (PUT
-a file to uploads/, watch the pipeline stage output) lands at the first
-apply — no S3 resources exist yet to exercise.
+Vector storage over Chapter 7 output: load each `embedded/<document_id>/`
+embeddings.jsonl (1024-dim vectors + text) into the managed vector store —
+choice (OpenSearch Serverless / pgvector / other) deferred to this chapter
+(decision 5). Cover dimensions, indexing, metadata, similarity search, and
+filtering; test retrieval independently (ch9). Real end-to-end smoke test
+(PUT to uploads/ -> processed/ -> embedded/ -> vectors) lands at the first
+apply — no AWS resources exist yet to exercise.

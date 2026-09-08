@@ -6,8 +6,9 @@ presign's reads DOCUMENTS_BUCKET from the environment at import time
 so it adds the handler directories to sys.path and supplies the env var
 first. Patched per-test in the suites themselves.
 
-Both handler modules are importable in one process: presign's is the bare
-module name ``handler``, ingest's is ``ingest_handler``.
+All three handler modules are importable in one process: presign's is the
+bare module name ``handler``; ingest's is ``ingest_handler``; embed's is
+``embed_handler``.
 """
 
 import os
@@ -17,6 +18,7 @@ from pathlib import Path
 _LAMBDA_DIRS = [
     Path(__file__).resolve().parents[1] / "lambda" / "presign_document",
     Path(__file__).resolve().parents[1] / "lambda" / "ingest_document",
+    Path(__file__).resolve().parents[1] / "lambda" / "embed_document",
 ]
 for _dir in _LAMBDA_DIRS:
     sys.path.insert(0, str(_dir))
