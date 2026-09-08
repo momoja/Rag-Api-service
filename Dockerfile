@@ -26,7 +26,10 @@ COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-install-project
 
 # Phase 2 — project code + tests. Changes here do not invalidate phase 1.
+# lambda/ is included so the dev image runs the handler suites too
+# (tests/conftest.py imports lambda/presign_document/handler.py).
 COPY rag_agent ./rag_agent
+COPY lambda ./lambda
 COPY tests ./tests
 RUN uv sync --frozen
 

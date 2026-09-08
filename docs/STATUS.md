@@ -1,4 +1,4 @@
-# Project Status — 2026-09-03
+# Project Status — 2026-09-05
 
 Handoff record so any session (or clone) can resume without prior conversation
 context. Pair with the git log and `docs/decisions/`.
@@ -12,12 +12,24 @@ context. Pair with the git log and `docs/decisions/`.
   **9 to add, 0 to change/destroy**. No AWS resources exist yet.
 - **Chapter 3 — Docker: DONE** (`38828bd`). Lambda-parity dev image
   (`rag-agent:dev`, python:3.12-slim + uv), compose `app` service.
-- **Chapter 4 — First Lambda: DONE** (latest commit). `presign-document`
+- **Chapter 4 — First Lambda: DONE** (`a829828`). `presign-document`
   container Lambda (public.ecr.aws/lambda/python:3.12): `rag_agent/storage.py`
   testable core (presign upload URL, SigV4 forced), thin handler, ECR+IAM+log
   group+function in `infra/dev/lambda.tf`. Host: 22 pytest green; container
   invocation verified 200/400/400/400 with SigV4 URL.
-- **Next: Chapter 5 — API layer** (API Gateway + Lambda integration).
+- **Chapter 5 — API layer: DONE** (working tree, uncommitted — commit on
+  move-on). HTTP API (`aws_apigatewayv2`, `infra/dev/api_gateway.tf`) with one
+  route `POST /documents/upload-url` -> presign Lambda (proxy integration,
+  payload format v2, `$default` stage + `auto_deploy`, dev CORS allow-all,
+  `aws_lambda_permission` for API GW). Handler now parses v2 proxy events
+  (JSON body incl. base64; 400/500 envelope unchanged); core untouched.
+  New: `tests/test_presign_handler.py` (15 tests, offline via patched presign),
+  `tests/conftest.py` (handler import path + env), `outputs.api_invoke_url`,
+  dev image copies `lambda/`. Verify: 37 pytest green (host + dev image);
+  container invocation with v2 events 200 (SigV4) + 400/400/400; terraform
+  plan 14 to add (5 API GW resources). Not applied.
+- **Next: Chapter 6 — Document ingestion** (S3 event -> processing Lambda ->
+  text extraction -> cleaning -> chunking -> metadata).
 
 ## Verified environment facts (2026-09-03)
 
@@ -40,21 +52,28 @@ context. Pair with the git log and `docs/decisions/`.
 6. Package `rag_agent` (not `app`). 7. boto3 pinned >=1.35,<2 in pyproject.
 8. Lambda deploys = container images (Windows-host friendly); presign handler
    forces SigV4 (SigV2 refused on new buckets — regression test added).
-9. Ch3/4 committed together on user move-on; ch3 was explicitly no-commit
-   during review.
+10. API layer = HTTP API (apigatewayv2), payload v2, `$default` stage +
+    auto_deploy; one route POST /documents/upload-url with JSON body
+    `{"key", "expires_in"}`. No auth yet (route only mints presigned URLs;
+    revisit when a route exposes data). CORS dev allow-all, injected by API
+    GW so the handler stays header-free; S3 bucket CORS arrives when browser
+    uploads land (ch6).
 
 ## Verify commands
 
 ```powershell
-uv run pytest                      # 22 passed
+uv run pytest                      # 37 passed
 uv run ruff check . && uv run ruff format --check .
 terraform -chdir=infra/dev validate
-terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 9 to add
-docker compose build && docker compose run --rm app    # dev image tests
+terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 14 to add
+docker compose build && docker compose run --rm app    # dev image tests (37)
+docker run --rm -e DOCUMENTS_BUCKET=<bucket> -v "$env:USERPROFILE\.aws:/root/.aws:ro" `
+  --entrypoint python rag-agent-presign:dev -c "<v2-event script>"  # 200/400/400/400
 ```
 
-## Chapter 5 preview
+## Chapter 6 preview
 
-API Gateway (HTTP API) endpoints: POST /documents/upload-url → presign
-Lambda; request validation; error mapping; Lambda event shapes change from
-direct-invocation to API-GW proxy — handler update + tests.
+Document ingestion: client POSTs /documents/upload-url (ch5 API), PUTs the
+file to S3, bucket versioning emits an object-created event -> processing
+Lambda -> text extraction -> cleaning -> chunking -> metadata, output staged
+for embeddings (ch7). Browser uploads also need S3 bucket CORS (decision 10).

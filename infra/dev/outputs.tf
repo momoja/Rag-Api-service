@@ -3,7 +3,7 @@ output "documents_bucket_name" {
   value       = aws_s3_bucket.documents.id
 }
 
-output "documents_bucket_arn" {
-  description = "ARN of the documents bucket"
-  value       = aws_s3_bucket.documents.arn
+output "api_invoke_url" {
+  description = "Invoke URL of the presign HTTP API ($default stage)"
+  value       = aws_apigatewayv2_api.presign.api_endpoint
 }
