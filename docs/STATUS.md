@@ -1,4 +1,4 @@
-# Project Status — 2026-09-05
+# Project Status — 2026-09-07
 
 Handoff record so any session (or clone) can resume without prior conversation
 context. Pair with the git log and `docs/decisions/`.
@@ -17,8 +17,8 @@ context. Pair with the git log and `docs/decisions/`.
   testable core (presign upload URL, SigV4 forced), thin handler, ECR+IAM+log
   group+function in `infra/dev/lambda.tf`. Host: 22 pytest green; container
   invocation verified 200/400/400/400 with SigV4 URL.
-- **Chapter 5 — API layer: DONE** (working tree, uncommitted — commit on
-  move-on). HTTP API (`aws_apigatewayv2`, `infra/dev/api_gateway.tf`) with one
+- **Chapter 5 — API layer: DONE** (`67fc190`). HTTP API
+  (`aws_apigatewayv2`, `infra/dev/api_gateway.tf`) with one
   route `POST /documents/upload-url` -> presign Lambda (proxy integration,
   payload format v2, `$default` stage + `auto_deploy`, dev CORS allow-all,
   `aws_lambda_permission` for API GW). Handler now parses v2 proxy events
