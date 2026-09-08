@@ -9,6 +9,7 @@ from rag_agent.storage import (
     MIN_EXPIRES_SECONDS,
     presign_upload_url,
     validate_key,
+    validate_upload_key,
 )
 
 BUCKET = "rag-agent-dev-documents-000000000000"
@@ -32,20 +33,24 @@ def fake_s3() -> FakeS3Client:
 
 
 def test_presign_happy_path(fake_s3: FakeS3Client) -> None:
-    result = presign_upload_url(BUCKET, "docs/report.pdf", s3_client=fake_s3)
+    result = presign_upload_url(BUCKET, "uploads/docs/report.pdf", s3_client=fake_s3)
 
     assert result["url"] == FAKE_URL
     assert result["method"] == "PUT"
     assert result["bucket"] == BUCKET
-    assert result["key"] == "docs/report.pdf"
+    assert result["key"] == "uploads/docs/report.pdf"
     assert result["expires_in"] == DEFAULT_EXPIRES_SECONDS
     assert fake_s3.calls == [
-        ("put_object", {"Bucket": BUCKET, "Key": "docs/report.pdf"}, DEFAULT_EXPIRES_SECONDS)
+        (
+            "put_object",
+            {"Bucket": BUCKET, "Key": "uploads/docs/report.pdf"},
+            DEFAULT_EXPIRES_SECONDS,
+        )
     ]
 
 
 def test_presign_custom_expiry(fake_s3: FakeS3Client) -> None:
-    result = presign_upload_url(BUCKET, "a.pdf", expires_in=120, s3_client=fake_s3)
+    result = presign_upload_url(BUCKET, "uploads/a.pdf", expires_in=120, s3_client=fake_s3)
     assert result["expires_in"] == 120
     assert fake_s3.calls[0][2] == 120
 
@@ -53,16 +58,16 @@ def test_presign_custom_expiry(fake_s3: FakeS3Client) -> None:
 @pytest.mark.parametrize("bad", [MIN_EXPIRES_SECONDS - 1, MAX_EXPIRES_SECONDS + 1])
 def test_presign_rejects_expiry_out_of_bounds(fake_s3: FakeS3Client, bad: int) -> None:
     with pytest.raises(ValueError, match="expires_in"):
-        presign_upload_url(BUCKET, "a.pdf", expires_in=bad, s3_client=fake_s3)
+        presign_upload_url(BUCKET, "uploads/a.pdf", expires_in=bad, s3_client=fake_s3)
 
 
 @pytest.mark.parametrize(
     "bad_key",
     [
         "",
-        "/absolute/path.pdf",
-        "seg/../escape.pdf",
-        "seg/..",
+        "/uploads/absolute.pdf",
+        "uploads/seg/../escape.pdf",
+        "uploads/seg/..",
         "x" * (1024 + 1),
         None,
         42,
@@ -76,25 +81,51 @@ def test_presign_rejects_invalid_keys(fake_s3: FakeS3Client, bad_key) -> None:
 @pytest.mark.parametrize("bad_bucket", ["", None, 7])
 def test_presign_rejects_invalid_bucket(fake_s3: FakeS3Client, bad_bucket) -> None:
     with pytest.raises(ValueError, match="bucket"):
-        presign_upload_url(bad_bucket, "a.pdf", s3_client=fake_s3)
+        presign_upload_url(bad_bucket, "uploads/a.pdf", s3_client=fake_s3)
 
 
 @pytest.mark.parametrize(
     ("key", "ok"),
     [
         ("report.pdf", True),
+        ("uploads/report.pdf", True),
         ("docs/sub/report.pdf", True),
         ("with space + plus.pdf", True),
         ("..", False),
-        ("..", False),
+        ("uploads/..", False),
     ],
 )
 def test_validate_key_examples(key: str, ok: bool) -> None:
+    """Generic path-safety validation stays extension-agnostic."""
     if ok:
         assert validate_key(key) == key
     else:
         with pytest.raises(ValueError):
             validate_key(key)
+
+
+@pytest.mark.parametrize(
+    ("key", "ok"),
+    [
+        ("uploads/report.pdf", True),
+        ("uploads/docs/sub/report.pdf", True),
+        ("uploads/with space + plus.pdf", True),
+        ("uploads/report", True),  # presign allows; ingest skips unknown types
+        ("report.pdf", False),
+        ("docs/report.pdf", False),
+        ("uploads", False),  # prefix requires the trailing slash
+        ("uploads/../escape.pdf", False),
+        ("/uploads/report.pdf", False),
+        ("", False),
+    ],
+)
+def test_validate_upload_key_requires_uploads_prefix(key: str, ok: bool) -> None:
+    """Keys presign mints PUT URLs for must live under uploads/ (ch6 trigger)."""
+    if ok:
+        assert validate_upload_key(key) == key
+    else:
+        with pytest.raises(ValueError):
+            validate_upload_key(key)
 
 
 def test_default_client_forces_sigv4() -> None:

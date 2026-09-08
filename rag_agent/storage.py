@@ -2,6 +2,9 @@
 
 The raw-documents S3 bucket (infra/dev/s3.tf) is the ingestion entry point:
 clients upload via pre-signed URLs, Chapter 6's pipeline reads the objects.
+Key layout: accepted uploads live under ``uploads/`` (the Chapter 6 ingest
+trigger's notification filter prefix); the pipeline stages results under
+``processed/`` in the same bucket.
 
 Design: SDK clients are injectable so this module is fully testable offline
 with a fake client; Lambda handlers (lambda/) wrap these functions with
@@ -18,6 +21,12 @@ DEFAULT_EXPIRES_SECONDS = 900
 MAX_EXPIRES_SECONDS = 3600
 
 MAX_KEY_LENGTH = 1024
+
+# Layout policy: the Chapter 6 ingest trigger watches only this prefix, so
+# every key presign offers a PUT URL for must live under it (see module
+# docstring). Keys outside the prefix are still path-safe but would never be
+# ingested.
+UPLOADS_PREFIX = "uploads/"
 
 _client: Any = None
 
@@ -37,6 +46,19 @@ def validate_key(key: str) -> str:
         raise ValueError("key must not start with '/' (absolute paths unsupported)")
     if ".." in key.split("/"):
         raise ValueError("key must not contain '..' path segments")
+    return key
+
+
+def validate_upload_key(key: str) -> str:
+    """Validate a key that will be offered a pre-signed PUT URL.
+
+    Path-safety checks first, then the uploads/ prefix requirement (the
+    Chapter 6 S3 event notification filter). Returns the key unchanged;
+    raises ValueError with a client-facing message otherwise.
+    """
+    validate_key(key)
+    if not key.startswith(UPLOADS_PREFIX):
+        raise ValueError(f"key must start with '{UPLOADS_PREFIX}'")
     return key
 
 
@@ -74,7 +96,7 @@ def presign_upload_url(
         raise ValueError(
             f"expires_in must be between {MIN_EXPIRES_SECONDS} and {MAX_EXPIRES_SECONDS} seconds"
         )
-    validate_key(key)
+    validate_upload_key(key)
 
     client = s3_client if s3_client is not None else _get_client()
     url = client.generate_presigned_url(

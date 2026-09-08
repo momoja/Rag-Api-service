@@ -54,7 +54,7 @@ def _body_of(response: dict) -> dict:
 
 
 def test_happy_path_returns_presign_contract(fake_presign) -> None:
-    event = _event(json.dumps({"key": "docs/report.pdf"}))
+    event = _event(json.dumps({"key": "uploads/docs/report.pdf"}))
 
     response = handler.lambda_handler(event, None)
 
@@ -62,10 +62,12 @@ def test_happy_path_returns_presign_contract(fake_presign) -> None:
     assert response["headers"]["Content-Type"] == "application/json"
     body = _body_of(response)
     assert body["method"] == "PUT"
-    assert body["key"] == "docs/report.pdf"
+    assert body["key"] == "uploads/docs/report.pdf"
     assert body["url"] == FAKE_URL
     assert body["expires_in"] == DEFAULT_EXPIRES_SECONDS
-    assert fake_presign == [(handler.DOCUMENTS_BUCKET, "docs/report.pdf", DEFAULT_EXPIRES_SECONDS)]
+    assert fake_presign == [
+        (handler.DOCUMENTS_BUCKET, "uploads/docs/report.pdf", DEFAULT_EXPIRES_SECONDS)
+    ]
 
 
 def test_custom_expires_in_is_forwarded(fake_presign) -> None:
@@ -79,13 +81,13 @@ def test_custom_expires_in_is_forwarded(fake_presign) -> None:
 
 
 def test_base64_encoded_body_is_decoded(fake_presign) -> None:
-    raw = json.dumps({"key": "b64.pdf"})
+    raw = json.dumps({"key": "uploads/b64.pdf"})
     event = _event(base64.b64encode(raw.encode("utf-8")).decode("ascii"), b64=True)
 
     response = handler.lambda_handler(event, None)
 
     assert response["statusCode"] == 200
-    assert _body_of(response)["key"] == "b64.pdf"
+    assert _body_of(response)["key"] == "uploads/b64.pdf"
 
 
 @pytest.mark.parametrize(
@@ -122,7 +124,7 @@ def test_missing_key_returns_400(payload: dict) -> None:
 
 @pytest.mark.parametrize("bad", ['"abc"', '"12.5"'], ids=["letters", "decimal"])
 def test_non_integer_expires_in_returns_400(bad: str) -> None:
-    event = _event(json.dumps({"key": "a.pdf", "expires_in": bad}))
+    event = _event(json.dumps({"key": "uploads/a.pdf", "expires_in": bad}))
 
     response = handler.lambda_handler(event, None)
 

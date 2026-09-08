@@ -38,3 +38,20 @@ resource "aws_s3_bucket_public_access_block" "documents" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+# Bucket CORS (decision 10): browser clients preflight their pre-signed PUT
+# straight to S3 before uploading, so S3 must answer the OPTIONS request.
+# API Gateway CORS (api_gateway.tf) only covers API calls, not the S3
+# endpoint. Dev allow-all mirrors the API's posture; tightened when a real
+# client origin exists. ETag is exposed so client JS can verify an upload.
+resource "aws_s3_bucket_cors_configuration" "documents" {
+  bucket = aws_s3_bucket.documents.id
+
+  cors_rule {
+    allowed_methods = ["GET", "HEAD", "PUT"]
+    allowed_origins = ["*"]
+    allowed_headers = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
