@@ -10,7 +10,7 @@ import json
 import pytest
 from botocore.exceptions import ClientError
 
-import rag_agent.embed as embed
+import rag_agent.bedrock as bedrock_mod
 from rag_agent.embed import (
     EMBEDDING_DIMENSIONS,
     EMBEDDING_MODEL_ID,
@@ -126,7 +126,7 @@ def test_is_retryable_only_for_transient_codes() -> None:
 
 def test_embed_texts_retries_transient_then_succeeds(monkeypatch) -> None:
     slept: list[float] = []
-    monkeypatch.setattr(embed.time, "sleep", slept.append)
+    monkeypatch.setattr(bedrock_mod.time, "sleep", slept.append)
     bedrock = FakeBedrock(
         errors=[client_error("ThrottlingException"), client_error("ModelTimeoutException")]
     )
@@ -140,7 +140,7 @@ def test_embed_texts_retries_transient_then_succeeds(monkeypatch) -> None:
 
 
 def test_embed_texts_raises_after_retries_exhausted(monkeypatch) -> None:
-    monkeypatch.setattr(embed.time, "sleep", lambda s: None)
+    monkeypatch.setattr(bedrock_mod.time, "sleep", lambda s: None)
     bedrock = FakeBedrock(errors=[client_error("ThrottlingException")] * 5)
 
     with pytest.raises(ClientError, match="Throttling"):
@@ -150,7 +150,7 @@ def test_embed_texts_raises_after_retries_exhausted(monkeypatch) -> None:
 
 
 def test_embed_texts_does_not_retry_permanent_errors(monkeypatch) -> None:
-    monkeypatch.setattr(embed.time, "sleep", lambda s: None)
+    monkeypatch.setattr(bedrock_mod.time, "sleep", lambda s: None)
     bedrock = FakeBedrock(errors=[client_error("AccessDeniedException")])
 
     with pytest.raises(ClientError, match="AccessDenied"):
@@ -160,7 +160,7 @@ def test_embed_texts_does_not_retry_permanent_errors(monkeypatch) -> None:
 
 
 def test_embed_texts_does_not_retry_value_errors(monkeypatch) -> None:
-    monkeypatch.setattr(embed.time, "sleep", lambda s: None)
+    monkeypatch.setattr(bedrock_mod.time, "sleep", lambda s: None)
 
     class RejectingBedrock(FakeBedrock):
         def invoke_model(self, **kwargs) -> dict:
@@ -280,7 +280,7 @@ def test_embed_document_rejects_empty_chunks_file() -> None:
 
 
 def test_embed_document_never_stages_partial_output_on_transient_failure(monkeypatch) -> None:
-    monkeypatch.setattr(embed.time, "sleep", lambda s: None)
+    monkeypatch.setattr(bedrock_mod.time, "sleep", lambda s: None)
     chunks = chunks_jsonl(
         {"index": 0, "text": "alpha", "start": 0, "end": 5},
         {"index": 1, "text": "beta", "start": 6, "end": 10},

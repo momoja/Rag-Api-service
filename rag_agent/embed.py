@@ -35,9 +35,13 @@ until a human fixes the deployment.
 
 import json
 import logging
-import time
 from typing import Any
 
+from rag_agent.bedrock import (
+    DEFAULT_RETRY_ATTEMPTS,  # noqa: F401 — re-exported for existing callers
+    is_retryable,  # noqa: F401 — re-exported for existing callers
+    retry_call,
+)
 from rag_agent.ingest import PROCESSED_PREFIX
 
 logger = logging.getLogger(__name__)
@@ -49,19 +53,9 @@ EMBEDDED_PREFIX = "embedded/"
 CHUNKS_SUFFIX = "/chunks.jsonl"
 EMBEDDINGS_SUFFIX = "/embeddings.jsonl"
 
-DEFAULT_RETRY_ATTEMPTS = 3
-_MAX_RETRY_DELAY_SECONDS = 8.0
-
-# Codes boto3 surfaces as ClientError; each is transient and worth a retry.
-RETRYABLE_ERROR_CODES = frozenset(
-    {
-        "ThrottlingException",
-        "ModelTimeoutException",
-        "ModelErrorException",
-        "InternalServerException",
-        "ServiceUnavailableException",
-    }
-)
+# Retry convention lives in rag_agent.bedrock (shared with the generation
+# path); embed re-exports is_retryable/DEFAULT_RETRY_ATTEMPTS for its
+# existing callers.
 
 _client: Any = None
 
@@ -74,16 +68,6 @@ def _get_client() -> Any:
 
         _client = boto3.client("bedrock-runtime")
     return _client
-
-
-def is_retryable(exc: Exception) -> bool:
-    """True when ``exc`` is a transient Bedrock/network failure."""
-    from botocore.exceptions import ClientError
-
-    if isinstance(exc, ClientError):
-        code = exc.response.get("Error", {}).get("Code", "")
-        return code in RETRYABLE_ERROR_CODES
-    return False
 
 
 def embed_text(
@@ -137,8 +121,10 @@ def embed_texts(
 ) -> list[dict]:
     """Embed each text with bounded retry on transient failures.
 
-    A text that exhausts its retries raises the last error — the caller
-    (Lambda) lets S3 retry the whole document, which is idempotent.
+    Retry behavior (classification, backoff, exhaustion) lives in
+    rag_agent.bedrock.retry_call — shared with the generation path. A text
+    that exhausts its retries raises the last error; the caller (Lambda)
+    lets S3 retry the whole document, which is idempotent.
     """
     if not isinstance(retry_attempts, int) or isinstance(retry_attempts, bool):
         raise ValueError("retry_attempts must be an integer")
@@ -148,35 +134,21 @@ def embed_texts(
     client = bedrock_client if bedrock_client is not None else _get_client()
     if not texts:
         return []
-    results: list[dict] = []
-    for text in texts:
-        for attempt in range(retry_attempts):
-            try:
-                result = embed_text(
-                    text,
-                    model_id=model_id,
-                    dimensions=dimensions,
-                    normalize=normalize,
-                    bedrock_client=client,
-                )
-                results.append(result)
-                break
-            except Exception as exc:
-                # Transient Bedrock failures (classified by is_retryable) get
-                # bounded exponential backoff; everything else is permanent
-                # and surfaces immediately. Sleep is patched in offline tests.
-                if not is_retryable(exc) or attempt == retry_attempts - 1:
-                    raise
-                delay = min(0.5 * (2**attempt), _MAX_RETRY_DELAY_SECONDS)
-                logger.warning(
-                    "bedrock retry %d/%d after %s in %.1fs",
-                    attempt + 1,
-                    retry_attempts,
-                    type(exc).__name__,
-                    delay,
-                )
-                time.sleep(delay)
-    return results
+    from functools import partial
+
+    def embed_one(text: str) -> dict:
+        return embed_text(
+            text,
+            model_id=model_id,
+            dimensions=dimensions,
+            normalize=normalize,
+            bedrock_client=client,
+        )
+
+    return [
+        retry_call(partial(embed_one, text), attempts=retry_attempts, label="bedrock embedding")
+        for text in texts
+    ]
 
 
 def _parse_chunks(data: bytes) -> list[dict]:

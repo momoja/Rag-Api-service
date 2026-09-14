@@ -83,8 +83,66 @@ context. Pair with the git log and `docs/decisions/`.
   answers — plain host suite stays green offline; verify step starts the
   db first. Verify: 156 pytest (host, incl. live-DB integration), ruff
   clean, terraform plan 42 to add (14 new). Not applied.
-- **Next: Chapter 9 — Retrieval** (query embedding -> vector search ->
-  top-K -> context; tests retrieval independently, ch10 wires the LLM).
+- **Chapter 9 — Retrieval: DONE** (working tree, uncommitted — commit on
+  move-on). Independent retrieval loop, `rag_agent/retrieval.py`: question
+  -> Titan query embedding (same model/config as ingest, so query and
+  chunk vectors share one space) -> cosine search over rag_chunks
+  (rag_agent.vector) -> top-K (default 5, max 20) ranked chunks with their
+  text — ready context, no LLM. Exposed on the ch5 HTTP API:
+  `POST /documents/search` -> `retrieve-document` Lambda
+  (`infra/dev/retrieve_lambda.tf`, `lambda/retrieve_document/`),
+  VPC-attached like index-document (SECRET_ARN creds, presign-style
+  400/500 envelope). VPC-endpoint fix-up (`infra/dev/vpc_endpoints.tf`):
+  S3 gateway (free) + Secrets Manager + Bedrock Runtime interface
+  endpoints (~$14/mo) — VPC functions have no NAT route to public AWS
+  APIs in the default VPC, so ch8's index function needed these too;
+  landed here so the apply config is complete for both. Retrieval is
+  proven independently: 4 gated integration tests (fake Bedrock, real
+  pgvector) verify semantic routing (beta question -> beta doc), top-K
+  capping, and document_id filters; handler suite pins the route
+  contract. Verify: 187 pytest (host + dev image, incl live-DB
+  integration), ruff clean, terraform plan 55 to add (13 new). Not
+  applied.
+- **Chapter 10 — Generation: DONE** (working tree, uncommitted — commit on
+  move-on; ch9+ch10 will commit together, ch9 was held per request). The
+  final stage: `rag_agent/generate.py` — retrieval (ch9 core, untouched)
+  -> explicit prompt -> Claude. Context injection is deliberate:
+  `build_prompt` numbers the retrieved chunks verbatim
+  (`[n] (doc_id chunk k) text...`), states the question, and instructs the
+  model to answer ONLY from context and cite `[n]`. Model: Claude Haiku
+  (`anthropic.claude-3-5-haiku-20241022-v1:0`, max_tokens 512) — one
+  constant to swap; availability checked at apply. No LLM call when
+  retrieval is empty (canned "no relevant documents", zero tokens spent).
+  Shared retry convention extracted to `rag_agent/bedrock.py`
+  (classification + bounded backoff); embed's own loop refactored onto it
+  (behavior unchanged, tests updated). Served on the same function/image:
+  `POST /documents/answer` route added (reuses the retrieve integration);
+  the handler dispatches on routeKey (search ch9 / answer ch10), sharing
+  the DB connection + Bedrock client. Answers return with `sources` (the
+  ranked chunks) for citation. Verify: 215 pytest (host + dev image, incl
+  live-DB integration: search, answer, empty-corpus, document-scoped),
+  ruff clean, terraform plan 56 to add (1 new route). Not applied.
+
+## First apply runbook (chapters 1-10)
+
+All ten chapters are code-complete and verified offline/locally; nothing
+has been applied. When ready (costs: RDS t4g.micro ~$12/mo + 2 interface
+endpoints ~$14/mo + storage; everything else pay-per-use):
+1. Bootstrap state: S3 bucket + DynamoDB lock, migrate Terraform backend
+   (decision 3).
+2. `terraform -chdir=infra/dev apply -var-file=dev.tfvars` — 56 resources:
+   bucket, HTTP API, 5 container Lambdas (presign, ingest, embed, index,
+   retrieve), RDS+pgvector, Secrets Manager, VPC endpoints, S3
+   notifications (uploads/ -> ingest -> processed/ -> embed -> embedded/
+   -> index -> rag_chunks).
+3. For each function image (presign, ingest, embed, index, retrieve):
+   build + push to its ECR repo, then re-apply (image_uri :latest
+   resolves at apply).
+4. Smoke: PUT a file to uploads/ via a presigned URL; watch
+   processed/<id>/ -> embedded/<id>/ land and rows appear in rag_chunks
+   (query via psql); POST /documents/search and POST /documents/answer on
+   the API URL (terraform output `api_invoke_url`) and confirm ranked
+   chunks / a cited answer.
 
 ## Verified environment facts (2026-09-03)
 
@@ -147,27 +205,46 @@ context. Pair with the git log and `docs/decisions/`.
     Local parity: compose `db` service = pgvector image; integration tests
     gated on a reachable DB (skip when offline), so the default host
     suite stays hermetic.
+16. Retrieval (ch9): query-side embedding reuses the ingest contract
+    (Titan V2, 1024-dim, normalized) so query and chunk vectors rank in
+    one space. `POST /documents/search` returns top-K chunks (default 5,
+    max 20) with text; client-correctable problems -> 400, transient
+    failures -> 500. VPC functions reach AWS APIs only through VPC
+    endpoints (S3 gateway free; Secrets Manager + Bedrock Runtime
+    interface endpoints ~$14/mo at apply) — the default VPC has no NAT.
+    Integration suite proves retrieval against real pgvector with a fake
+    Bedrock client (no model cost in tests).
+17. Generation (ch10): `POST /documents/answer` on the same function as
+    search (handler dispatches on routeKey; one image, one DB conn, one
+    Bedrock client). Model default Claude Haiku, max_tokens 512 — one
+    constant (plus the IAM model ARN in infra if the family changes).
+    Prompt: numbered verbatim chunks, question, answer-only-with-[n]
+    citations. Empty retrieval -> canned answer, no LLM call. Retry
+    convention centralized in `rag_agent/bedrock.py` (used by both embed
+    and generation); ValidationException -> ValueError (400), transient
+    codes retried 3x bounded backoff, misconfig fails loud.
 
 ## Verify commands
 
 ```powershell
-uv run pytest                      # 156 passed (integration skipped without DB)
+uv run pytest                      # 215 passed (integration skipped without DB)
 uv run ruff check . && uv run ruff format --check .
 terraform -chdir=infra/dev validate
-terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 42 to add
+terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 56 to add
 docker compose up -d db            # pgvector (localhost:5432)
-uv run pytest                      # 156 passed incl. live-DB integration
-docker compose build && docker compose run --rm app    # dev image tests (156)
+uv run pytest                      # 215 passed incl. live-DB integration
+docker compose build && docker compose run --rm app    # dev image tests (215)
 docker run --rm -e DOCUMENTS_BUCKET=<bucket> -v "$env:USERPROFILE\.aws:/root/.aws:ro" `
   --entrypoint python rag-agent-presign:dev -c "<v2-event script>"  # 200/400/400/400
 ```
 
-## Chapter 9 preview
+## Local end-to-end loop (no AWS)
 
-Retrieval, built independently: user question -> embed the query with the
-same Titan model -> vector search (rag_chunks, cosine, top-K) -> ranked
-chunks with text for context. Exercise the loop against the compose DB
-(and, at apply time, the real S3 -> pipeline -> RDS chain) before any LLM
-is wired; no Bedrock generation yet — that is Chapter 10. The vector
-dimensions/indexing/similarity semantics this store proves are the query
-path's contract.
+With compose db running, the full pipeline is exercisable today except the
+Bedrock calls (faked in tests): ingest/embed cores need S3 objects that
+only exist after apply, but retrieval + generation are fully live:
+`uv run python -c "..."` against rag_chunks after seeding, or the gated
+integration suites (`tests/test_*_integration.py`) — the exact code the
+Lambdas run, against real pgvector. The four function images
+(rag-agent-{presign,ingest,embed,index,retrieve}:dev) build locally for
+pre-apply smoke; 215 tests, 15 of them DB-gated.

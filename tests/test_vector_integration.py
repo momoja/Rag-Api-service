@@ -85,8 +85,12 @@ class FakeS3:
         return {"Body": io.BytesIO(self.body)}
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def conn() -> Connection:
+    """Per-test connection. Session-scoped connections leak an open read
+    transaction after searches, and an idle snapshot from one test module
+    blocks the next module's TRUNCATE (ACCESS EXCLUSIVE) — fresh + closed
+    per test keeps modules independent."""
     connection = pg_connect(DSN, connect_timeout=5)
     ensure_schema(connection)
     yield connection
