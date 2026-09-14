@@ -70,6 +70,13 @@ data "aws_iam_policy_document" "retrieve_role_policy" {
     actions   = ["bedrock:InvokeModel"]
     resources = ["arn:aws:bedrock:${var.region}::foundation-model/amazon.titan-embed-text-v2:0"]
   }
+  # Answer generation (ch10): Claude, invoked through the same API. A model
+  # family change means updating this ARN and GENERATION_MODEL_ID together
+  # (without this permission the /documents/answer route fails AccessDenied).
+  statement {
+    actions   = ["bedrock:InvokeModel"]
+    resources = ["arn:aws:bedrock:${var.region}::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0"]
+  }
 }
 
 resource "aws_iam_role" "retrieve_lambda" {

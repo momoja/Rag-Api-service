@@ -17,6 +17,23 @@ locals {
   ]
 }
 
+# The endpoint ENIs get their OWN security group. The function SGs are
+# egress-only (they declare no ingress), so using them as the endpoint's SG
+# leaves the endpoints unreachable — the inbound connection would be denied
+# at the endpoint ENI. HTTPS is opened to exactly the two functions.
+resource "aws_security_group" "vpc_endpoints" {
+  name        = "${var.project}-${var.environment}-vpc-endpoints"
+  description = "HTTPS ingress for interface VPC endpoints (index + retrieve Lambdas)"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = local.vpc_function_security_groups
+  }
+}
+
 # The default VPC's main route table (gateway endpoints attach to routes).
 data "aws_route_tables" "default_main" {
   vpc_id = data.aws_vpc.default.id
@@ -42,7 +59,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   service_name        = "com.amazonaws.${var.region}.secretsmanager"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = data.aws_subnets.default.ids
-  security_group_ids  = local.vpc_function_security_groups
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
 }
 
@@ -52,6 +69,6 @@ resource "aws_vpc_endpoint" "bedrock_runtime" {
   service_name        = "com.amazonaws.${var.region}.bedrock-runtime"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = data.aws_subnets.default.ids
-  security_group_ids  = local.vpc_function_security_groups
+  security_group_ids  = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
 }

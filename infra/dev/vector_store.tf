@@ -51,14 +51,17 @@ resource "aws_security_group" "index_lambda" {
 
 resource "aws_security_group" "index_db" {
   name        = "${var.project}-${var.environment}-index-db"
-  description = "pgvector database: only the index-document Lambda may connect"
+  description = "pgvector database: only the pipeline Lambdas may connect"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.index_lambda.id]
+    security_groups = [
+      aws_security_group.index_lambda.id,    # writes vectors (ch8)
+      aws_security_group.retrieve_lambda.id, # reads them for search/answer (ch9/ch10)
+    ]
   }
 }
 

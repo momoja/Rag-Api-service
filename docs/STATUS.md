@@ -1,4 +1,4 @@
-# Project Status — 2026-09-07
+# Project Status — 2026-09-14
 
 Handoff record so any session (or clone) can resume without prior conversation
 context. Pair with the git log and `docs/decisions/`.
@@ -65,8 +65,8 @@ context. Pair with the git log and `docs/decisions/`.
   segment). Verify: 120 pytest (host + dev image), ruff clean, terraform
   plan 28 to add (6 new), embed image builds + handler imports. Not
   applied.
-- **Chapter 8 — Vector storage: DONE** (working tree, uncommitted — commit
-  on move-on). Store: managed Postgres on RDS (`infra/dev/vector_store.tf`,
+- **Chapter 8 — Vector storage: DONE** (`f60ba89`). Store: managed
+  Postgres on RDS (`infra/dev/vector_store.tf`,
   t4g.micro, PG 16.4, private in the default VPC) running the pgvector
   extension; RDS over Aurora/OpenSearch for cost + local parity. Core
   `rag_agent/vector.py`: `rag_chunks` table (document_id, chunk_index,
@@ -83,8 +83,8 @@ context. Pair with the git log and `docs/decisions/`.
   answers — plain host suite stays green offline; verify step starts the
   db first. Verify: 156 pytest (host, incl. live-DB integration), ruff
   clean, terraform plan 42 to add (14 new). Not applied.
-- **Chapter 9 — Retrieval: DONE** (working tree, uncommitted — commit on
-  move-on). Independent retrieval loop, `rag_agent/retrieval.py`: question
+- **Chapter 9 — Retrieval: DONE** (`561ea94`, with ch10). Independent
+  retrieval loop, `rag_agent/retrieval.py`: question
   -> Titan query embedding (same model/config as ingest, so query and
   chunk vectors share one space) -> cosine search over rag_chunks
   (rag_agent.vector) -> top-K (default 5, max 20) ranked chunks with their
@@ -103,9 +103,8 @@ context. Pair with the git log and `docs/decisions/`.
   contract. Verify: 187 pytest (host + dev image, incl live-DB
   integration), ruff clean, terraform plan 55 to add (13 new). Not
   applied.
-- **Chapter 10 — Generation: DONE** (working tree, uncommitted — commit on
-  move-on; ch9+ch10 will commit together, ch9 was held per request). The
-  final stage: `rag_agent/generate.py` — retrieval (ch9 core, untouched)
+- **Chapter 10 — Generation: DONE** (`561ea94`). The final stage:
+  `rag_agent/generate.py` — retrieval (ch9 core, untouched)
   -> explicit prompt -> Claude. Context injection is deliberate:
   `build_prompt` numbers the retrieved chunks verbatim
   (`[n] (doc_id chunk k) text...`), states the question, and instructs the
@@ -122,19 +121,50 @@ context. Pair with the git log and `docs/decisions/`.
   ranked chunks) for citation. Verify: 215 pytest (host + dev image, incl
   live-DB integration: search, answer, empty-corpus, document-scoped),
   ruff clean, terraform plan 56 to add (1 new route). Not applied.
+- **Chapter 11 — Complete pipeline: DONE**. The stages were already wired
+  together (S3 notifications uploads/ -> processed/ -> embedded/ ->
+  index -> rag_chunks; the two query routes on one function); this chapter
+  proves the connection end to end and fixes what tracing it exposed. New
+  `tests/test_pipeline_integration.py` (3 DB-gated tests) drives the REAL
+  handlers in sequence over in-memory S3 + a fake Bedrock + live pgvector:
+  document bytes -> ingest -> embed -> index -> search route -> answer
+  route. It asserts the two contracts that hold the chain together:
+  (a) key routing — each stage writes exactly the keys the next stage's
+  notification filter matches (prefix + suffix: `processed/` + `.jsonl`,
+  `embedded/` + `.jsonl`) and never one that retriggers its own stage;
+  (b) `document_id` — sha256(bucket, key, version) derived at ingest and
+  re-derived from the key path by every later stage, so provenance
+  survives to the query and replaying a stage converges instead of
+  duplicating rows. Three apply-blocking wiring bugs surfaced by
+  following the chain (all fixed here): (1) the RDS security group
+  admitted only index-document to 5432 — retrieve-document could not open
+  the database at all; it now admits the retrieve SG too; (2) the
+  retrieve role granted `bedrock:InvokeModel` for the Titan embedding
+  model only, so ch10's Claude call would fail AccessDenied — the
+  generation model ARN is now granted alongside; (3) the interface VPC
+  endpoints reused the *function* security groups, which declare no
+  ingress, so their ENIs would refuse every connection — they now get a
+  dedicated SG with 443 ingress from exactly the two VPC-attached
+  functions. Verify: 218 pytest (host + dev image; 21 DB-gated, incl. the
+  3 end-to-end), ruff clean, terraform plan 57 to add (56 before: +1
+  endpoint SG, while the other two fixes change resources that do not
+  exist yet). Not applied.
 
-## First apply runbook (chapters 1-10)
+## First apply runbook (chapters 1-11)
 
-All ten chapters are code-complete and verified offline/locally; nothing
+All eleven chapters are code-complete and verified offline/locally; nothing
 has been applied. When ready (costs: RDS t4g.micro ~$12/mo + 2 interface
 endpoints ~$14/mo + storage; everything else pay-per-use):
 1. Bootstrap state: S3 bucket + DynamoDB lock, migrate Terraform backend
    (decision 3).
-2. `terraform -chdir=infra/dev apply -var-file=dev.tfvars` — 56 resources:
+2. `terraform -chdir=infra/dev apply -var-file=dev.tfvars` — 57 resources:
    bucket, HTTP API, 5 container Lambdas (presign, ingest, embed, index,
-   retrieve), RDS+pgvector, Secrets Manager, VPC endpoints, S3
-   notifications (uploads/ -> ingest -> processed/ -> embed -> embedded/
-   -> index -> rag_chunks).
+   retrieve), RDS+pgvector, Secrets Manager, VPC endpoints + their
+   security group (ch11), S3 notifications (uploads/ -> ingest ->
+   processed/ -> embed -> embedded/ -> index -> rag_chunks). Ch11 also
+   fixes three things the deployed chain cannot work without: RDS 5432
+   ingress from the retrieve function, the Claude model ARN on the
+   retrieve role, and endpoint reachability (decision 18).
 3. For each function image (presign, ingest, embed, index, retrieve):
    build + push to its ECR repo, then re-apply (image_uri :latest
    resolves at apply).
@@ -223,28 +253,40 @@ endpoints ~$14/mo + storage; everything else pay-per-use):
     convention centralized in `rag_agent/bedrock.py` (used by both embed
     and generation); ValidationException -> ValueError (400), transient
     codes retried 3x bounded backoff, misconfig fails loud.
+18. Pipeline wiring (ch11): the chain is S3-notification driven (uploads/
+    -> ingest -> processed/*.jsonl -> embed -> embedded/*.jsonl -> index
+    -> rag_chunks) with the two query routes on one function — there is no
+    orchestrator, so each stage's key layout IS the contract, asserted end
+    to end in `tests/test_pipeline_integration.py`. VPC-attached functions
+    need explicit reachability, and each failure mode shows up only at
+    runtime, after apply: RDS ingress from every function SG that
+    connects; a dedicated SG on the interface endpoints (the function SGs
+    are egress-only, so reusing them leaves the endpoints unreachable);
+    and `bedrock:InvokeModel` for EVERY model a function calls — Titan
+    for query embedding and Claude for generation on the same role.
 
 ## Verify commands
 
 ```powershell
-uv run pytest                      # 215 passed (integration skipped without DB)
+uv run pytest                      # 218 passed (integration skipped without DB)
 uv run ruff check . && uv run ruff format --check .
 terraform -chdir=infra/dev validate
-terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 56 to add
+terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 57 to add
 docker compose up -d db            # pgvector (localhost:5432)
-uv run pytest                      # 215 passed incl. live-DB integration
-docker compose build && docker compose run --rm app    # dev image tests (215)
+uv run pytest                      # 218 passed incl. live-DB integration
+docker compose build && docker compose run --rm app    # dev image tests (218)
 docker run --rm -e DOCUMENTS_BUCKET=<bucket> -v "$env:USERPROFILE\.aws:/root/.aws:ro" `
   --entrypoint python rag-agent-presign:dev -c "<v2-event script>"  # 200/400/400/400
 ```
 
 ## Local end-to-end loop (no AWS)
 
-With compose db running, the full pipeline is exercisable today except the
-Bedrock calls (faked in tests): ingest/embed cores need S3 objects that
-only exist after apply, but retrieval + generation are fully live:
-`uv run python -c "..."` against rag_chunks after seeding, or the gated
-integration suites (`tests/test_*_integration.py`) — the exact code the
-Lambdas run, against real pgvector. The four function images
+With compose db running, the whole pipeline runs locally minus the real
+models: `tests/test_pipeline_integration.py` (ch11) drives the actual
+handlers over in-memory S3, a fake Bedrock, and real pgvector — document
+bytes in, cited answer out. Every stage stays independently runnable too
+(ingest/embed cores need S3 objects that only exist after apply;
+retrieval + generation are live against rag_chunks via `uv run python -c
+"..."` after seeding, or their own gated suites). The five function images
 (rag-agent-{presign,ingest,embed,index,retrieve}:dev) build locally for
-pre-apply smoke; 215 tests, 15 of them DB-gated.
+pre-apply smoke; 218 tests, 21 of them DB-gated.

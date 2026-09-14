@@ -29,7 +29,7 @@ uv run ruff check .   # lint
 uv run ruff format --check .   # formatting
 ```
 
-Expected: tests pass (22 passed), ruff reports no violations.
+Expected: tests pass (218 passed; 21 DB-gated integration tests skip when no database is running — see below), ruff reports no violations.
 
 ## Docker (Lambda-parity dev environment)
 
@@ -47,8 +47,8 @@ docker compose run --rm app uv run ruff check .   # lint in the container
 docker compose run --rm app uv run python -c "import rag_agent; print(rag_agent.__version__)"
 ```
 
-`docker compose up` has no long-running process yet; it becomes the workflow
-once Chapter 4+ services (Lambda handlers, later the vector store) exist.
+`docker compose up -d db` runs the pgvector store the DB-gated integration
+tests use; the `app` service is a one-shot test runner, not a server.
 
 ## Lambda (container images)
 
@@ -69,17 +69,30 @@ docker run --rm --entrypoint python -e DOCUMENTS_BUCKET=rag-agent-dev-documents-
 | 2 | Terraform / IaC | Done* |
 | 3 | Docker / local development | Done |
 | 4 | AWS Lambda + Python | Done |
-| 5 | API layer | Planned |
-| 6 | Document ingestion | Planned |
-| 7 | Embeddings | Planned |
-| 8 | Vector storage | Planned |
-| 9 | Retrieval | Planned |
-| 10 | LLM / generation | Planned |
-| 11 | Complete RAG pipeline | Planned |
+| 5 | API layer | Done |
+| 6 | Document ingestion | Done |
+| 7 | Embeddings | Done |
+| 8 | Vector storage | Done |
+| 9 | Retrieval | Done |
+| 10 | LLM / generation | Done |
+| 11 | Complete RAG pipeline | Done |
 | 12 | Production improvements | Planned |
 
-\*Chapter 2 infrastructure is defined and planned but **not applied** — no AWS
-resources exist until you approve `terraform apply`.
+\*Infrastructure for chapters 2-11 is defined and `terraform plan`-clean but
+**not applied** — no AWS resources exist until you approve `terraform apply`.
+
+## Complete pipeline (local, no AWS)
+
+With no AWS account involved, the whole chain is verifiable today:
+
+```powershell
+docker compose up -d db --wait   # pgvector (localhost:5432)
+uv run pytest                    # 218 passed (21 DB-gated)
+```
+
+`tests/test_pipeline_integration.py` (Chapter 11) runs the real ingest ->
+embed -> index -> search/answer handlers over in-memory S3, a fake Bedrock,
+and the live pgvector store: document bytes in, cited answer out.
 
 ## Decisions
 
