@@ -30,6 +30,7 @@ from urllib.parse import unquote_plus
 
 from rag_agent.embed import CHUNKS_SUFFIX, embed_document
 from rag_agent.ingest import PROCESSED_PREFIX
+from rag_agent.observability import bind, bind_invocation, configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +58,10 @@ def _process_record(record: dict) -> dict:
         raise ValueError("record has no bucket name")
     if not _is_chunks_key(key):
         raise ValueError("record key is not a processed chunks file")
+    bind(key=key)
 
     result = embed_document(bucket, key)
+    bind(document_id=result["document_id"], num_embeddings=result["num_embeddings"])
     return {
         "key": key,
         "document_id": result["document_id"],
@@ -67,6 +70,8 @@ def _process_record(record: dict) -> dict:
 
 
 def lambda_handler(event: dict, context) -> dict:
+    configure_logging()
+    bind_invocation(context, stage="embed")
     processed: list[dict] = []
     skipped: list[dict] = []
     failures: list[dict] = []
@@ -87,6 +92,12 @@ def lambda_handler(event: dict, context) -> dict:
             logger.exception("failed to process %s", _key_of(record))
             failures.append({"key": _key_of(record)})
 
+    logger.info(
+        "embed invocation complete: processed=%d skipped=%d failed=%d",
+        len(processed),
+        len(skipped),
+        len(failures),
+    )
     if failures:
         raise RuntimeError(f"{len(failures)} record(s) failed transiently; retrying batch")
     return {

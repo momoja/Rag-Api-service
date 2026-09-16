@@ -56,6 +56,12 @@ data "aws_iam_policy_document" "ingest_role_policy" {
     actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.documents.arn}/processed/*"]
   }
+  # Failed async invocations are parked in this function's dead-letter queue
+  # (dlq.tf); Lambda's destination write is authorized by the role.
+  statement {
+    actions   = ["sqs:SendMessage"]
+    resources = [aws_sqs_queue.dead_letter["ingest"].arn]
+  }
 }
 
 resource "aws_iam_role" "ingest_lambda" {

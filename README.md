@@ -29,7 +29,7 @@ uv run ruff check .   # lint
 uv run ruff format --check .   # formatting
 ```
 
-Expected: tests pass (218 passed; 21 DB-gated integration tests skip when no database is running — see below), ruff reports no violations.
+Expected: tests pass (230 passed; 21 DB-gated integration tests skip when no database is running — see below), ruff reports no violations.
 
 ## Docker (Lambda-parity dev environment)
 
@@ -76,9 +76,9 @@ docker run --rm --entrypoint python -e DOCUMENTS_BUCKET=rag-agent-dev-documents-
 | 9 | Retrieval | Done |
 | 10 | LLM / generation | Done |
 | 11 | Complete RAG pipeline | Done |
-| 12 | Production improvements | Planned |
+| 12 | Production improvements | Partial |
 
-\*Infrastructure for chapters 2-11 is defined and `terraform plan`-clean but
+\*Infrastructure for chapters 2-12 is defined and `terraform plan`-clean but
 **not applied** — no AWS resources exist until you approve `terraform apply`.
 
 ## Complete pipeline (local, no AWS)
@@ -93,6 +93,21 @@ uv run pytest                    # 218 passed (21 DB-gated)
 `tests/test_pipeline_integration.py` (Chapter 11) runs the real ingest ->
 embed -> index -> search/answer handlers over in-memory S3, a fake Bedrock,
 and the live pgvector store: document bytes in, cited answer out.
+
+## Production hardening (Chapter 12)
+
+Shipped (nothing applied yet; ~$2/mo of alarms is the only new cost):
+
+| Area | What |
+|---|---|
+| Failure capture | Per-function dead-letter queue + explicit retry policy (2 retries, 1h event age) on the three S3-triggered functions — a transient failure that outlives its retries is parked, not lost |
+| Structured logs | One JSON line per record carrying `document_id`, stage, request id, `top_k` and result counts on every pipeline line (`rag_agent/observability.py`) |
+| Alarms | 16 CloudWatch alarms (function errors/throttles, DLQ depth, API 5xx, RDS storage/CPU) on an SNS topic; set `alarm_email` in `infra/dev/dev.tfvars` to be mailed |
+| CI | GitHub Actions: lint, tests against a pgvector service container, dev-image suite, five Lambda image builds, `terraform fmt`/`validate` |
+
+Deliberately deferred — each needs a decision or real traffic rather than
+more code: authentication on the query routes, API rate limiting, caching,
+retrieval evaluation, staging/prod environments, cost/performance tuning.
 
 ## Decisions
 

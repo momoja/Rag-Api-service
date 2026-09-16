@@ -1,0 +1,107 @@
+# Continuous integration (Chapter 12).
+#
+# Every job here runs a command that already runs locally, so CI adds no new
+# failure modes — it just runs them on every push and pull request:
+#
+#   lint           ruff check + format check
+#   tests          pytest against a real pgvector service container, so the
+#                  DB-gated integration tests actually run (they skip offline)
+#   container      the Lambda-parity dev image builds and passes the same suite
+#   lambda-images  all five function images build (catches Dockerfile /
+#                  dependency breakage that unit tests cannot see)
+#   terraform      fmt -check + validate, with no backend and no credentials
+#
+# Deliberately absent: `terraform plan`/`apply` and image pushes. Those need AWS
+# credentials (an OIDC role), a state backend, and a human decision to spend
+# money — none of which belong in an automatic run. Add them as a separate,
+# manually-approved workflow when the first apply is on the table.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The tests job maps the pgvector service container onto localhost; the
+  # container job reaches its own db service by name via compose.yaml.
+  TEST_DB_DSN: postgresql://rag:rag@localhost:5432/rag
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: rag
+          POSTGRES_PASSWORD: rag
+          POSTGRES_DB: rag
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rag -d rag"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run pytest
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose up -d db --wait
+      - run: docker compose build
+      - run: docker compose run --rm app
+
+  lambda-images:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        function:
+          - presign_document
+          - ingest_document
+          - embed_document
+          - index_document
+          - retrieve_document
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f lambda/${{ matrix.function }}/Dockerfile -t rag-agent-${{ matrix.function }}:ci .
+
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate

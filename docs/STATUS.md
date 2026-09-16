@@ -149,22 +149,54 @@ context. Pair with the git log and `docs/decisions/`.
   3 end-to-end), ruff clean, terraform plan 57 to add (56 before: +1
   endpoint SG, while the other two fixes change resources that do not
   exist yet). Not applied.
+- **Chapter 12 — Production hardening: DONE (partial by design)**. The
+  curriculum's list is a menu, not a checklist; this chapter takes the
+  four items that need no architectural commitment and cost ~$2/mo, and
+  records the rest as deferred decisions (19). (a) **Failure capture**:
+  the three S3-triggered functions now have an async invoke config (2
+  retries, 1h event age) with an on-failure destination — a transient
+  failure that outlives its retries is parked in a per-function SQS
+  dead-letter queue instead of vanishing silently (previously the event
+  was simply dropped: no row, no file, no trace); each role gained
+  `sqs:SendMessage` on its own queue. The API functions deliberately
+  have none — API Gateway invokes them synchronously and the 500 is the
+  caller's to act on. (b) **Structured logs**: new
+  `rag_agent/observability.py` renders one JSON object per record and
+  carries per-invocation context (stage, request id, document id, S3
+  key, top_k, result counts) through a ContextVar, so no call site
+  threads logging arguments; all five handlers bind context at entry and
+  log one completion line (ingest/embed/index counts, query status +
+  duration). `configure_logging()` is called at handler entry, never at
+  import, and only ADDS its handler — replacing root handlers is how
+  pytest capture and runtime-installed handlers get silently destroyed.
+  (c) **Alarms**: 16 CloudWatch alarms (per-function errors and
+  throttles, DLQ not-empty, API 5xx, RDS free storage and CPU) on one
+  SNS topic; `alarm_email` is empty by default, so no apply depends on a
+  human address (~$2/mo). (d) **CI**: `.github/workflows/ci.yml` runs
+  lint, the full suite against a pgvector service container (the
+  DB-gated tests actually run), the dev-image suite, all five Lambda
+  image builds, and terraform fmt/validate — with no credentials, no
+  plan, no apply. Verify: 230 pytest (host + dev image, 21 DB-gated),
+  ruff clean, terraform plan 80 to add (23 new: 3 queues, 3 invoke
+  configs, 1 topic, 16 alarms), all five function images build, workflow
+  YAML parses with 5 jobs. Not applied.
 
-## First apply runbook (chapters 1-11)
+## First apply runbook (chapters 1-12)
 
-All eleven chapters are code-complete and verified offline/locally; nothing
+All twelve chapters are code-complete and verified offline/locally; nothing
 has been applied. When ready (costs: RDS t4g.micro ~$12/mo + 2 interface
-endpoints ~$14/mo + storage; everything else pay-per-use):
+endpoints ~$14/mo + ~$2/mo alarms + storage; everything else pay-per-use):
 1. Bootstrap state: S3 bucket + DynamoDB lock, migrate Terraform backend
    (decision 3).
-2. `terraform -chdir=infra/dev apply -var-file=dev.tfvars` — 57 resources:
+2. `terraform -chdir=infra/dev apply -var-file=dev.tfvars` — 80 resources:
    bucket, HTTP API, 5 container Lambdas (presign, ingest, embed, index,
    retrieve), RDS+pgvector, Secrets Manager, VPC endpoints + their
-   security group (ch11), S3 notifications (uploads/ -> ingest ->
-   processed/ -> embed -> embedded/ -> index -> rag_chunks). Ch11 also
-   fixes three things the deployed chain cannot work without: RDS 5432
-   ingress from the retrieve function, the Claude model ARN on the
-   retrieve role, and endpoint reachability (decision 18).
+   security group (ch11), 3 dead-letter queues + async invoke configs
+   (ch12), SNS topic + 16 alarms (ch12), S3 notifications (uploads/ ->
+   ingest -> processed/ -> embed -> embedded/ -> index -> rag_chunks).
+   Ch11 fixed three things the chain cannot work without (RDS 5432 ingress
+   from the retrieve function, the Claude model ARN, endpoint
+   reachability); ch12 makes its failures visible and survivable.
 3. For each function image (presign, ingest, embed, index, retrieve):
    build + push to its ECR repo, then re-apply (image_uri :latest
    resolves at apply).
@@ -173,6 +205,19 @@ endpoints ~$14/mo + storage; everything else pay-per-use):
    (query via psql); POST /documents/search and POST /documents/answer on
    the API URL (terraform output `api_invoke_url`) and confirm ranked
    chunks / a cited answer.
+5. Logs and alerts: each function has its own log group, one JSON object
+   per line, with `document_id` on every pipeline line. Logs Insights
+   `fields @timestamp, logger, message | filter document_id = "<id>" |
+   sort @timestamp` follows one document across all stages; `filter
+   stage = "search"` shows query latency and result counts. Set
+   `alarm_email` in dev.tfvars and re-apply to be mailed when an alarm
+   fires (without it, alarms are console/metric-history only).
+6. Replay a parked event: a DLQ message is the original S3 event. Inspect
+   with `aws sqs receive-message --queue-url <dlq-url>`, then either
+   re-invoke the function with that payload (`aws lambda invoke
+   --function-name <fn> --payload <event.json>`) or simply re-upload the
+   object to `uploads/` — every stage is idempotent on document_id
+   (decisions 11/18), so replaying cannot duplicate rows.
 
 ## Verified environment facts (2026-09-03)
 
@@ -264,19 +309,46 @@ endpoints ~$14/mo + storage; everything else pay-per-use):
     are egress-only, so reusing them leaves the endpoints unreachable);
     and `bedrock:InvokeModel` for EVERY model a function calls — Titan
     for query embedding and Claude for generation on the same role.
+19. Production hardening (ch12): four pieces, chosen because none of them
+    forces an architectural decision or a paid service.
+    (a) Dead-letter queues: the three async functions get
+    `aws_lambda_function_event_invoke_config` (2 retries, 1h event age)
+    with an on-failure SQS destination, so a failure that outlives its
+    retries is parked rather than lost; the function role needs
+    `sqs:SendMessage` on its own queue. Synchronous (API) functions have
+    no destination by design — the caller owns the 500.
+    (b) Structured logs: `rag_agent/observability.py` renders one JSON
+    line per record and carries per-invocation context through a
+    ContextVar, so no call site passes logging arguments.
+    `configure_logging()` runs at handler entry (never at import) and only
+    ADDS its handler; `bind_invocation` resets context per event because
+    Lambda reuses the execution environment.
+    (c) Alarms: 16 CloudWatch alarms on one SNS topic, `alarm_email` empty
+    by default so no apply depends on a human address (~$2/mo).
+    (d) CI: GitHub Actions runs lint, the suite against a pgvector service
+    container, the dev-image suite, all five Lambda image builds, and
+    terraform fmt/validate — no credentials, no plan, no apply.
+    Deferred on purpose: auth (it needs a design decision — the query
+    routes now expose document data, so decision 10's revisit trigger has
+    fired), rate limiting, caching, evaluation, staging/prod environments,
+    and cost/performance tuning.
 
 ## Verify commands
 
 ```powershell
-uv run pytest                      # 218 passed (integration skipped without DB)
+uv run pytest                      # 230 passed (integration skipped without DB)
 uv run ruff check . && uv run ruff format --check .
 terraform -chdir=infra/dev validate
-terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 57 to add
+terraform -chdir=infra/dev fmt -check -recursive
+terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 80 to add
 docker compose up -d db            # pgvector (localhost:5432)
-uv run pytest                      # 218 passed incl. live-DB integration
-docker compose build && docker compose run --rm app    # dev image tests (218)
+uv run pytest                      # 230 passed incl. live-DB integration
+docker compose build && docker compose run --rm app    # dev image tests (230)
 docker run --rm -e DOCUMENTS_BUCKET=<bucket> -v "$env:USERPROFILE\.aws:/root/.aws:ro" `
   --entrypoint python rag-agent-presign:dev -c "<v2-event script>"  # 200/400/400/400
+# CI (.github/workflows/ci.yml) runs lint, the suite against a pgvector
+# service container, the dev-image suite, five Lambda image builds, and
+# terraform fmt/validate — no credentials, no plan, no apply.
 ```
 
 ## Local end-to-end loop (no AWS)
@@ -289,4 +361,4 @@ bytes in, cited answer out. Every stage stays independently runnable too
 retrieval + generation are live against rag_chunks via `uv run python -c
 "..."` after seeding, or their own gated suites). The five function images
 (rag-agent-{presign,ingest,embed,index,retrieve}:dev) build locally for
-pre-apply smoke; 218 tests, 21 of them DB-gated.
+pre-apply smoke; 230 tests, 21 of them DB-gated.

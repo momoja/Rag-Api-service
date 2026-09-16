@@ -28,6 +28,7 @@ from urllib.parse import unquote_plus
 import psycopg
 
 from rag_agent.embed import EMBEDDED_PREFIX
+from rag_agent.observability import bind, bind_invocation, configure_logging
 from rag_agent.vector import index_document
 
 logger = logging.getLogger(__name__)
@@ -102,8 +103,10 @@ def _process_record(record: dict) -> dict:
         raise ValueError("record has no bucket name")
     if not _is_embeddings_key(key):
         raise ValueError("record key is not an embedded embeddings file")
+    bind(key=key)
 
     result = index_document(bucket, key, s3_client=_get_s3(), conn=_get_conn())
+    bind(document_id=result["document_id"], num_embeddings=result["num_embeddings"])
     return {
         "key": key,
         "document_id": result["document_id"],
@@ -112,6 +115,8 @@ def _process_record(record: dict) -> dict:
 
 
 def lambda_handler(event: dict, context) -> dict:
+    configure_logging()
+    bind_invocation(context, stage="index")
     processed: list[dict] = []
     skipped: list[dict] = []
     failures: list[dict] = []
@@ -131,6 +136,12 @@ def lambda_handler(event: dict, context) -> dict:
             logger.exception("failed to process %s", _key_of(record))
             failures.append({"key": _key_of(record)})
 
+    logger.info(
+        "index invocation complete: processed=%d skipped=%d failed=%d",
+        len(processed),
+        len(skipped),
+        len(failures),
+    )
     if failures:
         raise RuntimeError(f"{len(failures)} record(s) failed transiently; retrying batch")
     return {

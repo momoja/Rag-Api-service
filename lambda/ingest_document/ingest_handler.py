@@ -30,6 +30,7 @@ import logging
 from urllib.parse import unquote_plus
 
 from rag_agent.ingest import process_document
+from rag_agent.observability import bind, bind_invocation, configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +55,7 @@ def _process_record(record: dict, *, chunk_size: int, overlap: int) -> dict:
     version_id = object_info.get("versionId") or None
     if not isinstance(bucket, str) or not bucket:
         raise ValueError("record has no bucket name")
+    bind(key=key, version_id=version_id)
 
     result = process_document(
         bucket,
@@ -62,6 +64,7 @@ def _process_record(record: dict, *, chunk_size: int, overlap: int) -> dict:
         chunk_size=chunk_size,
         overlap=overlap,
     )
+    bind(document_id=result["document_id"], num_chunks=result["num_chunks"])
     return {
         "key": key,
         "version_id": version_id,
@@ -71,6 +74,8 @@ def _process_record(record: dict, *, chunk_size: int, overlap: int) -> dict:
 
 
 def lambda_handler(event: dict, context) -> dict:
+    configure_logging()
+    bind_invocation(context, stage="ingest")
     processed: list[dict] = []
     skipped: list[dict] = []
     failures: list[dict] = []
@@ -90,6 +95,12 @@ def lambda_handler(event: dict, context) -> dict:
             logger.exception("failed to process %s", _describe(record))
             failures.append({"key": _key_of(record)})
 
+    logger.info(
+        "ingest invocation complete: processed=%d skipped=%d failed=%d",
+        len(processed),
+        len(skipped),
+        len(failures),
+    )
     if failures:
         raise RuntimeError(f"{len(failures)} record(s) failed transiently; retrying batch")
     return {

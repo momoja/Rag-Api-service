@@ -19,10 +19,12 @@ import base64
 import json
 import logging
 import os
+import time
 
 import psycopg
 
 from rag_agent.generate import generate_answer
+from rag_agent.observability import bind, bind_invocation, configure_logging
 from rag_agent.retrieval import DEFAULT_TOP_K, retrieve
 
 logger = logging.getLogger(__name__)
@@ -105,21 +107,51 @@ def _is_answer_route(event: dict) -> bool:
     return str(event.get("routeKey", "")).endswith("/documents/answer")
 
 
+def _bad_request(message: str) -> dict:
+    """Reject a client-correctable request, leaving a trace in the logs."""
+    logger.warning("rejected request: %s", message)
+    return _respond(400, {"error": message})
+
+
 def lambda_handler(event: dict, context) -> dict:
+    """Time one request, log its outcome, and dispatch to the route handler.
+
+    One line per request carries status, duration, and whatever the core
+    bound (top_k, document scope, result count) — the query path's whole
+    observability story in a single filterable record.
+    """
+    configure_logging()
+    bind_invocation(
+        context,
+        stage="answer" if _is_answer_route(event) else "search",
+        route=event.get("routeKey"),
+    )
+    started = time.perf_counter()
+    response = _handle(event)
+    logger.info(
+        "query request complete: status=%s duration_ms=%.1f",
+        response["statusCode"],
+        (time.perf_counter() - started) * 1000,
+    )
+    return response
+
+
+def _handle(event: dict) -> dict:
     body = _parse_body(event)
     if body is None:
-        return _respond(400, {"error": "request body must be a JSON object"})
+        return _bad_request("request body must be a JSON object")
 
     try:
         question = body["question"]
     except (KeyError, TypeError):
-        return _respond(400, {"error": "missing required field: 'question'"})
+        return _bad_request("missing required field: 'question'")
 
     try:
         top_k = int(body.get("top_k", DEFAULT_TOP_K))
     except (TypeError, ValueError):
-        return _respond(400, {"error": "'top_k' must be an integer"})
+        return _bad_request("'top_k' must be an integer")
     document_id = body.get("document_id")
+    bind(top_k=top_k, document_id=document_id)
 
     try:
         if _is_answer_route(event):
@@ -130,6 +162,7 @@ def lambda_handler(event: dict, context) -> dict:
                 top_k=top_k,
                 document_id=document_id,
             )
+            bind(num_results=len(result["sources"]), answer_chars=len(result["answer"]))
         else:
             result = retrieve(
                 question,
@@ -138,8 +171,9 @@ def lambda_handler(event: dict, context) -> dict:
                 top_k=top_k,
                 document_id=document_id,
             )
+            bind(num_results=len(result["results"]))
     except ValueError as exc:
-        return _respond(400, {"error": str(exc)})
+        return _bad_request(str(exc))
     except Exception:
         logger.exception("query failed for question=%r", question)
         return _respond(500, {"error": "internal error"})

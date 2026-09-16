@@ -14,3 +14,9 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "alarm_email" {
+  description = "Optional address subscribed to the alarm SNS topic (empty = no subscription)"
+  type        = string
+  default     = ""
+}

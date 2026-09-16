@@ -55,9 +55,9 @@ resource "aws_security_group" "index_db" {
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
+    from_port = 5432
+    to_port   = 5432
+    protocol  = "tcp"
     security_groups = [
       aws_security_group.index_lambda.id,    # writes vectors (ch8)
       aws_security_group.retrieve_lambda.id, # reads them for search/answer (ch9/ch10)
@@ -159,6 +159,12 @@ data "aws_iam_policy_document" "index_role_policy" {
   statement {
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [aws_secretsmanager_secret.index_db.arn]
+  }
+  # Failed async invocations are parked in this function's dead-letter queue
+  # (dlq.tf); Lambda's destination write is authorized by the role.
+  statement {
+    actions   = ["sqs:SendMessage"]
+    resources = [aws_sqs_queue.dead_letter["index"].arn]
   }
 }
 

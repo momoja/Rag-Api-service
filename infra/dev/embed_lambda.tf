@@ -66,6 +66,12 @@ data "aws_iam_policy_document" "embed_role_policy" {
     actions   = ["bedrock:InvokeModel"]
     resources = ["arn:aws:bedrock:${var.region}::foundation-model/amazon.titan-embed-text-v2:0"]
   }
+  # Failed async invocations are parked in this function's dead-letter queue
+  # (dlq.tf); Lambda's destination write is authorized by the role.
+  statement {
+    actions   = ["sqs:SendMessage"]
+    resources = [aws_sqs_queue.dead_letter["embed"].arn]
+  }
 }
 
 resource "aws_iam_role" "embed_lambda" {
