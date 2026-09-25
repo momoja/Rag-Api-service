@@ -135,6 +135,9 @@ resource "aws_apigatewayv2_route" "retrieve" {
   api_id    = aws_apigatewayv2_api.presign.id
   route_key = "POST /documents/search"
   target    = "integrations/${aws_apigatewayv2_integration.retrieve.id}"
+
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 # Answer route (Chapter 10): same function/integration — the handler
@@ -145,6 +148,9 @@ resource "aws_apigatewayv2_route" "answer" {
   api_id    = aws_apigatewayv2_api.presign.id
   route_key = "POST /documents/answer"
   target    = "integrations/${aws_apigatewayv2_integration.retrieve.id}"
+
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 # Same shape as the presign permission: this API may invoke the function.

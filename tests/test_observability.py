@@ -210,6 +210,9 @@ def test_retrieve_handler_binds_route_and_result_count(monkeypatch) -> None:
         {
             "routeKey": "POST /documents/search",
             "body": json.dumps({"question": "q", "top_k": 3}),
+            "requestContext": {
+                "authorizer": {"jwt": {"claims": {"email": "dev@example.com", "sub": "abc"}}}
+            },
         },
         FakeLambdaContext(),
     )
@@ -219,6 +222,31 @@ def test_retrieve_handler_binds_route_and_result_count(monkeypatch) -> None:
         "stage": "search",
         "route": "POST /documents/search",
         "request_id": "req-123",
+        "user": "dev@example.com",  # the gateway's verified claims reach the logs
         "top_k": 3,
         "num_results": 1,
     }
+
+
+def test_presign_handler_binds_the_authenticated_caller(monkeypatch) -> None:
+    import handler
+
+    monkeypatch.setattr(
+        handler,
+        "presign_upload_url",
+        lambda *args, **kwargs: {"url": "https://s3.example/put", "key": "uploads/a.txt"},
+    )
+
+    response = handler.lambda_handler(
+        {
+            "routeKey": "POST /documents/upload-url",
+            "body": json.dumps({"key": "uploads/a.txt"}),
+            "requestContext": {
+                "authorizer": {"jwt": {"claims": {"email": "dev@example.com", "sub": "abc"}}}
+            },
+        },
+        FakeLambdaContext(),
+    )
+
+    assert response["statusCode"] == 200
+    assert context()["user"] == "dev@example.com"

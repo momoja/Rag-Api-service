@@ -23,6 +23,7 @@ import json
 import logging
 import os
 
+from rag_agent.apigw import caller_identity
 from rag_agent.observability import bind, bind_invocation, configure_logging
 from rag_agent.storage import presign_upload_url
 
@@ -67,6 +68,7 @@ def _parse_body(event: dict) -> dict | None:
 def lambda_handler(event: dict, context) -> dict:
     configure_logging()
     bind_invocation(context, stage="presign", route=event.get("routeKey"))
+    bind(user=caller_identity(event))
     body = _parse_body(event)
     if body is None:
         return _respond(400, {"error": "request body must be a JSON object"})

@@ -23,6 +23,7 @@ import time
 
 import psycopg
 
+from rag_agent.apigw import caller_identity
 from rag_agent.generate import generate_answer
 from rag_agent.observability import bind, bind_invocation, configure_logging
 from rag_agent.retrieval import DEFAULT_TOP_K, retrieve
@@ -126,6 +127,7 @@ def lambda_handler(event: dict, context) -> dict:
         stage="answer" if _is_answer_route(event) else "search",
         route=event.get("routeKey"),
     )
+    bind(user=caller_identity(event))
     started = time.perf_counter()
     response = _handle(event)
     logger.info(

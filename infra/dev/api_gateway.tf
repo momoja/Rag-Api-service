@@ -2,9 +2,12 @@
 #
 # One route at this stage: POST /documents/upload-url -> presign Lambda.
 # Chosen over REST API (apigateway): cheaper, simpler, native Lambda proxy
-# with payload format v2, built-in CORS config. No auth yet — the route only
-# mints client-side pre-signed PUT URLs for the documents bucket; revisit
-# when an endpoint exposes documents or answers (see docs/STATUS.md).
+# with payload format v2, built-in CORS config.
+#
+# Every route now requires a Cognito ID token: auth.tf (ch12) attaches a JWT
+# authorizer to this route and to the two query routes in retrieve_lambda.tf.
+# Chapter 5's "no auth yet" reasoning expired when search/answer shipped —
+# they return document text, and this one mints write access to the bucket.
 #
 # auto_deploy on the $default stage means re-applying after an image push
 # publishes the new function code with no separate deployment step.
@@ -24,7 +27,7 @@ resource "aws_apigatewayv2_api" "presign" {
   cors_configuration {
     allow_origins = ["*"]
     allow_methods = ["POST", "OPTIONS"]
-    allow_headers = ["content-type"]
+    allow_headers = ["content-type", "authorization"]
     max_age       = 3600
   }
 }
@@ -40,6 +43,11 @@ resource "aws_apigatewayv2_route" "presign" {
   api_id    = aws_apigatewayv2_api.presign.id
   route_key = "POST /documents/upload-url"
   target    = "integrations/${aws_apigatewayv2_integration.presign.id}"
+
+  # Authorization is per route on HTTP APIs, so each route opts in explicitly
+  # (the other two are in retrieve_lambda.tf).
+  authorization_type = "JWT"
+  authorizer_id      = aws_apigatewayv2_authorizer.cognito.id
 }
 
 resource "aws_apigatewayv2_stage" "default" {

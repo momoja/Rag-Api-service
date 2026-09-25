@@ -176,43 +176,76 @@ context. Pair with the git log and `docs/decisions/`.
   lint, the full suite against a pgvector service container (the
   DB-gated tests actually run), the dev-image suite, all five Lambda
   image builds, and terraform fmt/validate — with no credentials, no
-  plan, no apply. Verify: 230 pytest (host + dev image, 21 DB-gated),
-  ruff clean, terraform plan 80 to add (23 new: 3 queues, 3 invoke
-  configs, 1 topic, 16 alarms), all five function images build, workflow
-  YAML parses with 5 jobs. Not applied.
+  plan, no apply.
+  (e) **Authentication**: every API route now requires a Cognito ID token
+  — decision 10's "revisit when a route exposes data" trigger fired when
+  ch9/ch10 shipped search/answer. `infra/dev/auth.tf`: user pool
+  (email-as-username, admin-created users only, no MFA — dev posture), a
+  public app client (SRP + password auth for the CLI token fetch, 1h
+  ID/access tokens, 30d refresh, user-existence errors suppressed), and an
+  HTTP-API JWT authorizer bound to the pool's issuer and the client as
+  audience. The three routes opt in explicitly with
+  `authorization_type = "JWT"`; CORS gained the `authorization` header so
+  browser preflights pass; outputs expose the pool and client ids. The
+  gateway validates signature, issuer, audience and expiry *before* the
+  function runs, and an unauthenticated request gets 401 without invoking
+  Lambda — one enforcement point at the edge, so nothing in the functions
+  re-validates a token (no JWKS cache to maintain, and no invocation path
+  bypasses the gateway). `rag_agent/apigw.py` reads the gateway's verified
+  claims for logging: presign and retrieve bind the caller's email as
+  `user` in the structured log context, and a direct invocation (the DLQ
+  replay path) degrades to "no claims" instead of crashing. Verify: 243
+  pytest (host + dev image, 21 DB-gated), ruff clean, terraform plan 83 to
+  add (26 new), all five function images build, workflow YAML parses with
+  5 jobs. Not applied.
 
 ## First apply runbook (chapters 1-12)
 
 All twelve chapters are code-complete and verified offline/locally; nothing
 has been applied. When ready (costs: RDS t4g.micro ~$12/mo + 2 interface
-endpoints ~$14/mo + ~$2/mo alarms + storage; everything else pay-per-use):
+endpoints ~$14/mo + ~$2/mo alarms + Cognito (free at dev scale) + storage;
+everything else pay-per-use):
 1. Bootstrap state: S3 bucket + DynamoDB lock, migrate Terraform backend
    (decision 3).
-2. `terraform -chdir=infra/dev apply -var-file=dev.tfvars` — 80 resources:
+2. `terraform -chdir=infra/dev apply -var-file=dev.tfvars` — 83 resources:
    bucket, HTTP API, 5 container Lambdas (presign, ingest, embed, index,
    retrieve), RDS+pgvector, Secrets Manager, VPC endpoints + their
    security group (ch11), 3 dead-letter queues + async invoke configs
-   (ch12), SNS topic + 16 alarms (ch12), S3 notifications (uploads/ ->
-   ingest -> processed/ -> embed -> embedded/ -> index -> rag_chunks).
-   Ch11 fixed three things the chain cannot work without (RDS 5432 ingress
-   from the retrieve function, the Claude model ARN, endpoint
-   reachability); ch12 makes its failures visible and survivable.
+   (ch12), SNS topic + 16 alarms (ch12), Cognito user pool + app client +
+   JWT authorizer (ch12), S3 notifications (uploads/ -> ingest ->
+   processed/ -> embed -> embedded/ -> index -> rag_chunks). Ch11 fixed
+   three things the chain cannot work without (RDS 5432 ingress from the
+   retrieve function, the Claude model ARN, endpoint reachability); ch12
+   made its failures visible and survivable, and put the API behind auth.
 3. For each function image (presign, ingest, embed, index, retrieve):
    build + push to its ECR repo, then re-apply (image_uri :latest
    resolves at apply).
-4. Smoke: PUT a file to uploads/ via a presigned URL; watch
-   processed/<id>/ -> embedded/<id>/ land and rows appear in rag_chunks
-   (query via psql); POST /documents/search and POST /documents/answer on
-   the API URL (terraform output `api_invoke_url`) and confirm ranked
-   chunks / a cited answer.
-5. Logs and alerts: each function has its own log group, one JSON object
+4. Create a dev user and fetch a token — every route requires one now
+   (`terraform output cognito_user_pool_id`, `terraform output
+   cognito_client_id`):
+   `aws cognito-idp admin-create-user --user-pool-id <pool> --username
+   you@example.com --user-attributes Name=email,Value=you@example.com`,
+   then `aws cognito-idp admin-set-user-password --user-pool-id <pool>
+   --username you@example.com --password '<strong>' --permanent`, then
+   `aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH
+   --client-id <client> --auth-parameters
+   USERNAME=you@example.com,PASSWORD=<strong>` and send
+   `AuthenticationResult.IdToken` as `Authorization: Bearer <token>`.
+   Without a token every route answers 401 at the gateway and no Lambda
+   runs.
+5. Smoke: with the token from step 4, mint a presigned URL (POST
+   /documents/upload-url), PUT a file to uploads/; watch processed/<id>/
+   -> embedded/<id>/ land and rows appear in rag_chunks (query via psql);
+   POST /documents/search and POST /documents/answer with the same bearer
+   token and confirm ranked chunks / a cited answer.
+6. Logs and alerts: each function has its own log group, one JSON object
    per line, with `document_id` on every pipeline line. Logs Insights
    `fields @timestamp, logger, message | filter document_id = "<id>" |
    sort @timestamp` follows one document across all stages; `filter
-   stage = "search"` shows query latency and result counts. Set
-   `alarm_email` in dev.tfvars and re-apply to be mailed when an alarm
-   fires (without it, alarms are console/metric-history only).
-6. Replay a parked event: a DLQ message is the original S3 event. Inspect
+   stage = "search"` shows query latency, result counts and the caller
+   (`user`). Set `alarm_email` in dev.tfvars and re-apply to be mailed when
+   an alarm fires (without it, alarms are console/metric-history only).
+7. Replay a parked event: a DLQ message is the original S3 event. Inspect
    with `aws sqs receive-message --queue-url <dlq-url>`, then either
    re-invoke the function with that payload (`aws lambda invoke
    --function-name <fn> --payload <event.json>`) or simply re-upload the
@@ -328,22 +361,35 @@ endpoints ~$14/mo + ~$2/mo alarms + storage; everything else pay-per-use):
     (d) CI: GitHub Actions runs lint, the suite against a pgvector service
     container, the dev-image suite, all five Lambda image builds, and
     terraform fmt/validate — no credentials, no plan, no apply.
-    Deferred on purpose: auth (it needs a design decision — the query
-    routes now expose document data, so decision 10's revisit trigger has
-    fired), rate limiting, caching, evaluation, staging/prod environments,
-    and cost/performance tuning.
+    Deferred on purpose: rate limiting, caching, evaluation, staging/prod
+    environments, and cost/performance tuning. (Authentication, the other
+    item on that list, landed as decision 20.)
+20. Authentication (ch12, decision 10's revisit trigger): the API's three
+    routes require a Cognito ID token, validated by an HTTP-API JWT
+    authorizer (issuer = the user pool, audience = the app client). Cognito
+    + JWT over the alternatives because the client is a browser: IAM SigV4
+    would mean shipping AWS credentials to it, and an API key has no
+    identity, expiry or revocation; a JWT authorizer also does the check at
+    the edge, before any function runs, in one place. The functions do NOT
+    re-validate tokens — no invocation path bypasses the gateway, and a
+    second check would need a JWKS cache kept correct. What they do is read
+    the verified claims for logging (`user` = email) via
+    `rag_agent/apigw.py`, which tolerates a missing authorizer section so
+    the DLQ replay path (direct invoke) still works. Dev posture, revisit
+    for prod: admin-created users only (no self sign-up), no MFA, no
+    hosted-UI domain, CORS still allow-all origins.
 
 ## Verify commands
 
 ```powershell
-uv run pytest                      # 230 passed (integration skipped without DB)
+uv run pytest                      # 243 passed (integration skipped without DB)
 uv run ruff check . && uv run ruff format --check .
 terraform -chdir=infra/dev validate
 terraform -chdir=infra/dev fmt -check -recursive
-terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 80 to add
+terraform -chdir=infra/dev plan -var-file=dev.tfvars   # 83 to add
 docker compose up -d db            # pgvector (localhost:5432)
-uv run pytest                      # 230 passed incl. live-DB integration
-docker compose build && docker compose run --rm app    # dev image tests (230)
+uv run pytest                      # 243 passed incl. live-DB integration
+docker compose build && docker compose run --rm app    # dev image tests (243)
 docker run --rm -e DOCUMENTS_BUCKET=<bucket> -v "$env:USERPROFILE\.aws:/root/.aws:ro" `
   --entrypoint python rag-agent-presign:dev -c "<v2-event script>"  # 200/400/400/400
 # CI (.github/workflows/ci.yml) runs lint, the suite against a pgvector
@@ -361,4 +407,4 @@ bytes in, cited answer out. Every stage stays independently runnable too
 retrieval + generation are live against rag_chunks via `uv run python -c
 "..."` after seeding, or their own gated suites). The five function images
 (rag-agent-{presign,ingest,embed,index,retrieve}:dev) build locally for
-pre-apply smoke; 230 tests, 21 of them DB-gated.
+pre-apply smoke; 243 tests, 21 of them DB-gated.
