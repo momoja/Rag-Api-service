@@ -39,7 +39,7 @@ resource "aws_apigatewayv2_stage" "default" {
   name        = "$default"
   auto_deploy = true
 }
- 
+
 resource "aws_lambda_permission" "presign_apigateway" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.presign_document.function_name

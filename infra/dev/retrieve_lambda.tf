@@ -38,7 +38,7 @@ data "aws_iam_policy_document" "retrieve_assume_role" {
 }
 
 data "aws_iam_policy_document" "retrieve_role_policy" {
-  
+
   statement {
     actions   = ["logs:CreateLogGroup"]
     resources = ["arn:aws:logs:${var.region}:${local.account_id}:log-group:${local.retrieve_log_group}"]
@@ -47,17 +47,17 @@ data "aws_iam_policy_document" "retrieve_role_policy" {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["arn:aws:logs:${var.region}:${local.account_id}:log-group:${local.retrieve_log_group}:log-stream:*"]
   }
-   
+
   statement {
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [aws_secretsmanager_secret.index_db.arn]
   }
-   
+
   statement {
     actions   = ["bedrock:InvokeModel"]
     resources = ["arn:aws:bedrock:${var.region}::foundation-model/amazon.titan-embed-text-v2:0"]
   }
-  
+
   statement {
     actions   = ["bedrock:InvokeModel"]
     resources = ["arn:aws:bedrock:${var.region}::foundation-model/anthropic.claude-3-5-haiku-20241022-v1:0"]

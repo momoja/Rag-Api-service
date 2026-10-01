@@ -34,22 +34,22 @@ data "aws_iam_policy_document" "embed_role_policy" {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["arn:aws:logs:${var.region}:${local.account_id}:log-group:${local.embed_log_group}:log-stream:*"]
   }
- 
+
   statement {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.documents.arn}/processed/*"]
   }
-   
+
   statement {
     actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.documents.arn}/embedded/*"]
   }
-  
+
   statement {
     actions   = ["bedrock:InvokeModel"]
     resources = ["arn:aws:bedrock:${var.region}::foundation-model/amazon.titan-embed-text-v2:0"]
   }
- 
+
   statement {
     actions   = ["sqs:SendMessage"]
     resources = [aws_sqs_queue.dead_letter["embed"].arn]
@@ -77,8 +77,8 @@ resource "aws_lambda_function" "embed_document" {
   role          = aws_iam_role.embed_lambda.arn
   image_uri     = "${aws_ecr_repository.embed_document.repository_url}:latest"
   package_type  = "Image"
-   
-  
+
+
   timeout     = 300
   memory_size = 512
 

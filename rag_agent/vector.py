@@ -42,7 +42,7 @@ class SearchHit:
 
 
 def _validate_embedding(embedding) -> tuple[float, ...]:
-   
+
     if not isinstance(embedding, (list, tuple)):
         raise ValueError("embedding must be a list of floats")
     if len(embedding) != EMBEDDING_DIMENSIONS:
@@ -56,7 +56,7 @@ def _validate_embedding(embedding) -> tuple[float, ...]:
 
 
 def read_embeddings(data: bytes) -> list[EmbeddingRecord]:
-    
+
     records: list[EmbeddingRecord] = []
     for line_number, line in enumerate(data.decode("utf-8").splitlines(), start=1):
         if not line.strip():
@@ -88,7 +88,7 @@ def read_embeddings(data: bytes) -> list[EmbeddingRecord]:
 
 
 def ensure_schema(conn: Connection) -> None:
-    
+
     with conn.cursor() as cursor:
         cursor.execute("CREATE EXTENSION IF NOT EXISTS vector")
         cursor.execute(_SCHEMA_SQL)
@@ -96,7 +96,7 @@ def ensure_schema(conn: Connection) -> None:
 
 
 def replace_document(conn: Connection, *, document_id: str, records: list[EmbeddingRecord]) -> int:
-    
+
     if not isinstance(document_id, str) or not document_id:
         raise ValueError("document_id must be a non-empty string")
     if not records:

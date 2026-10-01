@@ -62,7 +62,6 @@ def bind_invocation(lambda_context: Any, **fields: Any) -> None:
 
 
 class JsonFormatter(logging.Formatter):
-
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {
             "ts": datetime.fromtimestamp(record.created, UTC).isoformat(),
@@ -80,7 +79,7 @@ class JsonFormatter(logging.Formatter):
 
 
 def configure_logging(level: int = logging.INFO) -> None:
-    
+
     root = logging.getLogger()
     if any(isinstance(handler.formatter, JsonFormatter) for handler in root.handlers):
         return

@@ -15,7 +15,7 @@ _client: Any = None
 
 
 def validate_key(key: str) -> str:
-    
+
     if not isinstance(key, str):
         raise ValueError("key must be a string")
     if not key:
@@ -30,7 +30,7 @@ def validate_key(key: str) -> str:
 
 
 def validate_upload_key(key: str) -> str:
-    
+
     validate_key(key)
     if not key.startswith(UPLOADS_PREFIX):
         raise ValueError(f"key must start with '{UPLOADS_PREFIX}'")
@@ -38,7 +38,7 @@ def validate_upload_key(key: str) -> str:
 
 
 def _get_client() -> Any:
-    
+
     global _client
     if _client is None:
         import boto3
@@ -58,7 +58,7 @@ def presign_upload_url(
     expires_in: int = DEFAULT_EXPIRES_SECONDS,
     s3_client: Any | None = None,
 ) -> dict[str, str | int]:
-    
+
     if not isinstance(bucket, str) or not bucket:
         raise ValueError("bucket must be a non-empty string")
     if not MIN_EXPIRES_SECONDS <= expires_in <= MAX_EXPIRES_SECONDS:

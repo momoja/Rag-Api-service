@@ -43,7 +43,7 @@ def embed_text(
     normalize: bool = EMBEDDING_NORMALIZE,
     bedrock_client: Any | None = None,
 ) -> dict:
-    
+
     if not isinstance(text, str) or not text:
         raise ValueError("text must be a non-empty string")
 

@@ -7,7 +7,7 @@ locals {
 resource "aws_cognito_user_pool" "users" {
   name = "${var.project}-${var.environment}-users"
 
-  
+
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
 
@@ -58,7 +58,7 @@ resource "aws_apigatewayv2_authorizer" "cognito" {
   identity_sources = ["$request.header.Authorization"]
 
   jwt_configuration {
-    
+
     audience = [aws_cognito_user_pool_client.app.id]
     issuer   = local.cognito_issuer
   }

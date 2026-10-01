@@ -127,17 +127,17 @@ data "aws_iam_policy_document" "index_role_policy" {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["arn:aws:logs:${var.region}:${local.account_id}:log-group:${local.index_log_group}:log-stream:*"]
   }
-  
+
   statement {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.documents.arn}/embedded/*"]
   }
-  
+
   statement {
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [aws_secretsmanager_secret.index_db.arn]
   }
-  
+
   statement {
     actions   = ["sqs:SendMessage"]
     resources = [aws_sqs_queue.dead_letter["index"].arn]

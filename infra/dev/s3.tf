@@ -1,8 +1,8 @@
 
 resource "aws_s3_bucket" "documents" {
- 
+
   bucket        = local.documents_bucket_name
-  force_destroy = false 
+  force_destroy = false
 
   tags = {
     Name = "Raw document uploads for RAG ingestion"
@@ -12,7 +12,7 @@ resource "aws_s3_bucket" "documents" {
 resource "aws_s3_bucket_versioning" "documents" {
   bucket = aws_s3_bucket.documents.id
   versioning_configuration {
-  
+
     status = "Enabled"
   }
 }

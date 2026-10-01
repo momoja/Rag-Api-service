@@ -13,12 +13,12 @@ resource "aws_sqs_queue" "dead_letter" {
 
   name = "${var.project}-${var.environment}-${each.key}-dlq"
 
- 
+
   message_retention_seconds  = 1209600
   visibility_timeout_seconds = 60
 
-  
- 
+
+
   sqs_managed_sse_enabled = true
 }
 

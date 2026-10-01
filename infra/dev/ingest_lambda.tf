@@ -34,17 +34,17 @@ data "aws_iam_policy_document" "ingest_role_policy" {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["arn:aws:logs:${var.region}:${local.account_id}:log-group:${local.ingest_log_group}:log-stream:*"]
   }
-  
+
   statement {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.documents.arn}/uploads/*"]
   }
-  
+
   statement {
     actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.documents.arn}/processed/*"]
   }
-  
+
   statement {
     actions   = ["sqs:SendMessage"]
     resources = [aws_sqs_queue.dead_letter["ingest"].arn]

@@ -46,7 +46,7 @@ def generate_answer(
     max_tokens: int = GENERATION_MAX_TOKENS,
     model_id: str = GENERATION_MODEL_ID,
 ) -> dict:
-    
+
     result = retrieve(
         question,
         conn=conn,

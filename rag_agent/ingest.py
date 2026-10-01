@@ -26,7 +26,6 @@ _client: Any = None
 
 @dataclass(frozen=True)
 class Chunk:
-   
     index: int
     text: str
     start: int
@@ -38,7 +37,7 @@ def _extension_of(source_key: str) -> str:
 
 
 def extract_text(data: bytes, *, source_key: str) -> str:
-    
+
     ext = _extension_of(source_key)
     if ext == ".pdf":
         try:
@@ -62,7 +61,7 @@ def extract_text(data: bytes, *, source_key: str) -> str:
 
 
 def clean_text(text: str) -> str:
-    
+
     text = unicodedata.normalize("NFKC", text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = "".join(c for c in text if c in "\n\t" or (31 < ord(c) < 127 or ord(c) > 127))
@@ -73,7 +72,7 @@ def clean_text(text: str) -> str:
 
 
 def _last_whitespace(text: str, start: int, end: int) -> int | None:
-    
+
     for i in range(end - 1, start - 1, -1):
         if text[i].isspace():
             return i
@@ -86,7 +85,7 @@ def chunk_text(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> list[Chunk]:
-    
+
     if not isinstance(chunk_size, int) or isinstance(chunk_size, bool):
         raise ValueError("chunk_size must be an integer")
     if chunk_size < 1:
@@ -123,7 +122,7 @@ def chunk_text(
 
 
 def document_id(bucket: str, key: str, version_id: str | None) -> str:
-    
+
     digest = hashlib.sha256()
     digest.update(bucket.encode("utf-8"))
     digest.update(b"\0")
@@ -134,7 +133,7 @@ def document_id(bucket: str, key: str, version_id: str | None) -> str:
 
 
 def _get_client() -> Any:
-    
+
     global _client
     if _client is None:
         import boto3
@@ -157,7 +156,7 @@ def process_document(
     overlap: int = DEFAULT_CHUNK_OVERLAP,
     s3_client: Any | None = None,
 ) -> dict:
-    
+
     if not isinstance(bucket, str) or not bucket:
         raise ValueError("bucket must be a non-empty string")
     if not isinstance(key, str) or not key:

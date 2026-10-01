@@ -21,7 +21,7 @@ def _is_embeddings_key(key: str) -> bool:
     return key.startswith(EMBEDDED_PREFIX) and key.endswith(_EMBEDDINGS_SUFFIX)
 
 
-def _get_s3():  
+def _get_s3():
     global _s3_client
     if _s3_client is None:
         import boto3
