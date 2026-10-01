@@ -1,32 +1,3 @@
-"""Chapter 6 document-ingestion core: extract -> clean -> chunk -> stage.
-
-The pipeline consumes objects uploaded to ``<bucket>/uploads/`` (minted by
-the Chapter 5 presign API) and stages ready-to-embed output under
-``<bucket>/processed/<document_id>/`` in the same bucket:
-``chunks.jsonl`` (one JSON object per chunk) and ``metadata.json``.
-
-Stage boundaries, deliberately:
-- Extraction supports PDF (pypdf) and UTF-8 plain text (.txt/.md). Other
-  formats are rejected with ValueError — permanent content problems raise
-  ValueError (handler skips, no retry); anything else is a transient failure
-  (S3 retries the invocation).
-- Cleaning normalizes Unicode (NFKC), unifies newlines, drops control
-  characters, strips per-line trailing whitespace, and collapses blank-line
-  runs. It does NOT rejoin hyphenated PDF line breaks or rewrite whitespace
-  inside lines — paragraph structure survives for .md, and embedding
-  handles stray spacing.
-- Chunking is a character window with overlap, broken at whitespace when
-  the window lands mid-word (>= 60% of the window kept, else hard cut).
-  Deterministic and pure: same text in, same chunks out.
-
-document_id is a SHA-256 of (bucket, key, version_id): re-processing the
-same object version overwrites the same processed/ keys (idempotent), while
-a new upload version stages alongside the old one.
-
-Design mirrors rag_agent.storage: SDK clients are injectable, so this module
-is fully testable offline; Lambda handlers only wrap it with event/env glue.
-"""
-
 import hashlib
 import io
 import json
@@ -45,7 +16,6 @@ logger = logging.getLogger(__name__)
 PROCESSED_PREFIX = "processed/"
 
 # ~1200 chars is a conservative window for a 1024-token embedding model
-# (ch7); 200 chars of overlap (~15%) preserves boundary context.
 DEFAULT_CHUNK_SIZE = 1200
 DEFAULT_CHUNK_OVERLAP = 200
 
@@ -56,12 +26,7 @@ _client: Any = None
 
 @dataclass(frozen=True)
 class Chunk:
-    """A single chunk of cleaned document text.
-
-    ``start``/``end`` are character offsets into the cleaned text that was
-    chunked, so chunks can be traced back to the exact source slice.
-    """
-
+   
     index: int
     text: str
     start: int
@@ -73,12 +38,7 @@ def _extension_of(source_key: str) -> str:
 
 
 def extract_text(data: bytes, *, source_key: str) -> str:
-    """Extract raw text from ``data`` according to ``source_key``'s extension.
-
-    Raises ValueError for unsupported formats, corrupt documents, and
-    non-UTF-8 text — all permanent conditions the caller should skip, not
-    retry.
-    """
+    
     ext = _extension_of(source_key)
     if ext == ".pdf":
         try:
@@ -102,14 +62,7 @@ def extract_text(data: bytes, *, source_key: str) -> str:
 
 
 def clean_text(text: str) -> str:
-    """Normalize extracted text for chunking. Pure and deterministic.
-
-    Steps: NFKC Unicode normalization; CRLF/CR -> LF; drop control
-    characters (keeping newline/tab); strip per-line trailing whitespace;
-    collapse runs of 3+ newlines to 2 (at most one blank line between
-    paragraphs); strip surrounding whitespace. Intra-line spacing and
-    newlines are otherwise preserved (markdown structure survives).
-    """
+    
     text = unicodedata.normalize("NFKC", text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = "".join(c for c in text if c in "\n\t" or (31 < ord(c) < 127 or ord(c) > 127))
@@ -120,7 +73,7 @@ def clean_text(text: str) -> str:
 
 
 def _last_whitespace(text: str, start: int, end: int) -> int | None:
-    """Index of the last whitespace char in ``text[start:end]``, or None."""
+    
     for i in range(end - 1, start - 1, -1):
         if text[i].isspace():
             return i
@@ -133,14 +86,7 @@ def chunk_text(
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     overlap: int = DEFAULT_CHUNK_OVERLAP,
 ) -> list[Chunk]:
-    """Split ``text`` into overlapping character windows. Pure/deterministic.
-
-    Windows never start on whitespace. When a full window ends mid-word it
-    retreats to the last whitespace boundary — unless that would leave less
-    than 60% of the window, in which case it hard-cuts (unbroken long
-    tokens must still make progress). Consecutive chunks overlap by
-    ``overlap`` characters, measured between chunk boundaries.
-    """
+    
     if not isinstance(chunk_size, int) or isinstance(chunk_size, bool):
         raise ValueError("chunk_size must be an integer")
     if chunk_size < 1:
@@ -177,7 +123,7 @@ def chunk_text(
 
 
 def document_id(bucket: str, key: str, version_id: str | None) -> str:
-    """Deterministic id for one object version (idempotency key)."""
+    
     digest = hashlib.sha256()
     digest.update(bucket.encode("utf-8"))
     digest.update(b"\0")
@@ -188,7 +134,7 @@ def document_id(bucket: str, key: str, version_id: str | None) -> str:
 
 
 def _get_client() -> Any:
-    """Lazily build the default S3 client (first call only)."""
+    
     global _client
     if _client is None:
         import boto3
@@ -211,16 +157,7 @@ def process_document(
     overlap: int = DEFAULT_CHUNK_OVERLAP,
     s3_client: Any | None = None,
 ) -> dict:
-    """Run the full pipeline on one S3 object and stage its output.
-
-    Downloads the object, extracts/cleans/chunks it, and writes
-    ``processed/<doc_id>/chunks.jsonl`` + ``metadata.json`` (PutObject
-    overwrites, so re-processing the same version is idempotent).
-
-    Raises ValueError on permanent content problems (unsupported format,
-    corrupt PDF, non-UTF-8, no extractable text). Returns a summary dict on
-    success.
-    """
+    
     if not isinstance(bucket, str) or not bucket:
         raise ValueError("bucket must be a non-empty string")
     if not isinstance(key, str) or not key:

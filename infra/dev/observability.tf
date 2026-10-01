@@ -1,20 +1,3 @@
-# Alarms over the pipeline's failure channels (Chapter 12).
-#
-# Logs are for diagnosis; alarms are for noticing. These cover the ways the
-# pipeline breaks without an obvious symptom: a function erroring or being
-# throttled, an event parked in a dead-letter queue (dlq.tf), the API returning
-# 5xx, or the vector store filling up or saturating.
-#
-# Every alarm publishes to one SNS topic. `alarm_email` is optional and empty
-# by default: topic and alarms still exist (console + metric history), nothing
-# is mailed, and no apply depends on a human address being configured.
-#
-# Cost: ~$0.10 per alarm-month (~$2/mo at this count) plus SNS notifications.
-#
-# Deliberately absent for now: a "pipeline stalled" alarm (a composite of
-# ingest successes, which needs a metric the pipeline does not emit yet) and
-# latency/p95 alarms (nothing to tune against before real traffic).
-
 locals {
   monitored_functions = {
     presign  = aws_lambda_function.presign_document
@@ -37,10 +20,7 @@ resource "aws_sns_topic_subscription" "alarm_email" {
   endpoint  = var.alarm_email
 }
 
-# --- function health ---------------------------------------------------------
 
-# Any error at all: for these functions an error is either a transient failure
-# on its way to the DLQ or a misconfiguration — both worth an alarm.
 resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   for_each = local.monitored_functions
 
@@ -58,8 +38,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
-# Throttling means the account/region concurrency limit was hit: the events
-# were retried by the platform, but the pipeline is behind.
+
 resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   for_each = local.monitored_functions
 
@@ -77,10 +56,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
-# --- parked events -----------------------------------------------------------
 
-# Anything in a DLQ is a document that did not finish the pipeline. ok_actions
-# is set here (and only here): knowing the queue was drained again matters.
 resource "aws_cloudwatch_metric_alarm" "dlq_depth" {
   for_each = aws_sqs_queue.dead_letter
 
@@ -98,8 +74,6 @@ resource "aws_cloudwatch_metric_alarm" "dlq_depth" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
   ok_actions          = [aws_sns_topic.alarms.arn]
 }
-
-# --- API and store -----------------------------------------------------------
 
 resource "aws_cloudwatch_metric_alarm" "api_5xx" {
   alarm_name        = "${var.project}-${var.environment}-api-5xx"
@@ -119,8 +93,6 @@ resource "aws_cloudwatch_metric_alarm" "api_5xx" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
-# Vector store capacity: 20 GiB allocated, so 2 GiB free is the warning line
-# well before writes start failing.
 resource "aws_cloudwatch_metric_alarm" "db_free_storage" {
   alarm_name          = "${var.project}-${var.environment}-db-free-storage"
   alarm_description   = "less than 2 GiB free on the pgvector instance"
@@ -136,8 +108,6 @@ resource "aws_cloudwatch_metric_alarm" "db_free_storage" {
   alarm_actions       = [aws_sns_topic.alarms.arn]
 }
 
-# Sustained CPU saturation on a t4g.micro: queries slow down before they fail,
-# so 15 minutes above 80% is worth knowing about (10-minute average of 3x5min).
 resource "aws_cloudwatch_metric_alarm" "db_cpu" {
   alarm_name          = "${var.project}-${var.environment}-db-cpu"
   alarm_description   = "pgvector instance CPU above 80% for 15 minutes"

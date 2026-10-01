@@ -1,20 +1,3 @@
-"""retrieve-document Lambda — the query path over API Gateway (ch9 + ch10).
-
-Serves two routes on the Chapter 5 HTTP API, both as v2 proxy events with
-JSON bodies ``{"question": "...", "top_k": 5, "document_id": "..."}``
-(top_k/document_id optional):
-- POST /documents/search -> rag_agent.retrieval.retrieve: top-K chunks.
-- POST /documents/answer -> rag_agent.generate.generate_answer: retrieval
-  plus the Chapter 10 LLM stage (answer + cited sources). Same function
-  and image for both: the route branches here on routeKey, and both cores
-  share the injected DB connection and Bedrock client.
-
-Thin glue: parse event -> connect (DB via DB_DSN or SECRET_ARN, Bedrock
-via the default client) -> call the core -> respond. Client-correctable
-problems (missing/bad question, top_k bounds) surface as 400s; transient
-DB/Bedrock failures as 500s so the client can retry.
-"""
-
 import base64
 import json
 import logging
@@ -43,7 +26,6 @@ def _respond(status_code: int, payload: dict) -> dict:
 
 
 def _parse_body(event: dict) -> dict | None:
-    """Decode and JSON-parse the proxy event body (mirrors presign)."""
     raw = event.get("body")
     if raw is None:
         return None
@@ -60,11 +42,6 @@ def _parse_body(event: dict) -> dict | None:
 
 
 def _connect():
-    """Build a psycopg connection from DB_DSN (dev) or SECRET_ARN (prod RDS).
-
-    Split from _get_conn so tests can exercise the builder while stubbing
-    the cached accessor.
-    """
     dsn = os.environ.get("DB_DSN")
     if dsn:
         return psycopg.connect(dsn, connect_timeout=10)
@@ -87,7 +64,6 @@ def _connect():
 
 
 def _get_conn():
-    """One connection per invocation, reused across the cold start."""
     global _conn
     if _conn is None:
         _conn = _connect()
@@ -95,7 +71,6 @@ def _get_conn():
 
 
 def _get_bedrock():
-    """Lazily build the default Bedrock Runtime client (first call only)."""
     global _bedrock
     if _bedrock is None:
         import boto3
@@ -109,18 +84,11 @@ def _is_answer_route(event: dict) -> bool:
 
 
 def _bad_request(message: str) -> dict:
-    """Reject a client-correctable request, leaving a trace in the logs."""
     logger.warning("rejected request: %s", message)
     return _respond(400, {"error": message})
 
 
 def lambda_handler(event: dict, context) -> dict:
-    """Time one request, log its outcome, and dispatch to the route handler.
-
-    One line per request carries status, duration, and whatever the core
-    bound (top_k, document scope, result count) — the query path's whole
-    observability story in a single filterable record.
-    """
     configure_logging()
     bind_invocation(
         context,

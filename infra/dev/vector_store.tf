@@ -1,20 +1,3 @@
-# Vector store + index-document Lambda (Chapter 8).
-#
-# Managed Postgres (RDS) running the pgvector extension — the 1024-dim
-# contract (decisions 5/14) is enforced by the schema the code creates
-# (rag_agent.vector.ensure_schema: vector(1024) column + HNSW index).
-# RDS over Aurora: t4g.micro is ~5-10x cheaper than Aurora serverless v2's
-# 0.5-ACU floor, and there is no pause/resume surprise. Chosen over
-# OpenSearch Serverless for cost and local parity (same SQL via the compose
-# pgvector container); revisit when scale demands k-NN at OCU granularity.
-#
-# The index-document Lambda must reach the database, so unlike the other
-# functions it runs INSIDE the default VPC (private networking: RDS
-# publicly_accessible = false, traffic only from the Lambda's SG on 5432).
-# Credentials never appear in function env: RDS master password is generated
-# once and stored in AWS Secrets Manager; the function reads SECRET_ARN at
-# startup (see lambda/index_document/index_handler.py). Bedrock/S3-side
-# functions do not need this file's resources.
 
 locals {
   index_function_name = "${var.project}-${var.environment}-index-document"
@@ -33,8 +16,6 @@ data "aws_subnets" "default" {
     values = [data.aws_vpc.default.id]
   }
 }
-
-# --- Networking -------------------------------------------------------------
 
 resource "aws_security_group" "index_lambda" {
   name        = "${var.project}-${var.environment}-index-lambda"
@@ -65,8 +46,6 @@ resource "aws_security_group" "index_db" {
   }
 }
 
-# --- Database + secret ------------------------------------------------------
-
 resource "random_password" "index_db" {
   length  = 24
   special = false
@@ -94,8 +73,6 @@ resource "aws_db_instance" "index" {
   publicly_accessible    = false
   multi_az               = false
 
-  # Dev posture: no replication, no snapshots to leak or bill; teardown is
-  # a deliberate act at the apply session, like force_destroy=false on S3.
   skip_final_snapshot     = true
   backup_retention_period = 0
   deletion_protection     = false
@@ -118,7 +95,7 @@ resource "aws_secretsmanager_secret_version" "index_db" {
   })
 }
 
-# --- index-document Lambda ----------------------------------------------------
+
 
 resource "aws_ecr_repository" "index_document" {
   name                 = "${var.project}-${var.environment}/index-document"
@@ -150,18 +127,17 @@ data "aws_iam_policy_document" "index_role_policy" {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["arn:aws:logs:${var.region}:${local.account_id}:log-group:${local.index_log_group}:log-stream:*"]
   }
-  # Read staged embeddings (written by embed-document, ch7).
+  
   statement {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.documents.arn}/embedded/*"]
   }
-  # Read the DB secret once at startup. Scoped to our secret only.
+  
   statement {
     actions   = ["secretsmanager:GetSecretValue"]
     resources = [aws_secretsmanager_secret.index_db.arn]
   }
-  # Failed async invocations are parked in this function's dead-letter queue
-  # (dlq.tf); Lambda's destination write is authorized by the role.
+  
   statement {
     actions   = ["sqs:SendMessage"]
     resources = [aws_sqs_queue.dead_letter["index"].arn]
@@ -179,7 +155,7 @@ resource "aws_iam_role_policy" "index_lambda" {
   policy = data.aws_iam_policy_document.index_role_policy.json
 }
 
-# VPC-attached Lambdas need ENI management; AWS-managed policy provides it.
+
 resource "aws_iam_role_policy_attachment" "index_lambda_vpc" {
   role       = aws_iam_role.index_lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"

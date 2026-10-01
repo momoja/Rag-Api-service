@@ -1,23 +1,3 @@
-"""presign-document Lambda — serves pre-signed S3 PUT URLs over API Gateway.
-
-Chapter 4's direct-invocation contract became an API Gateway proxy event in
-Chapter 5: clients call POST /documents/upload-url on the HTTP API and the
-gateway forwards a v2 payload-format event whose body is a JSON string:
-
-    event = {
-        "version": "2.0",
-        "routeKey": "POST /documents/upload-url",
-        "body": '{"key": "docs/report.pdf", "expires_in": 900}',
-        "isBase64Encoded": false,
-        ...
-    }
-
-Only matched routes reach the function (the gateway 404s the rest), so no
-path/method dispatch lives here. All business logic stays in
-rag_agent.storage; this module is thin glue:
-parse event -> read env -> call core -> respond.
-"""
-
 import base64
 import json
 import logging
@@ -29,9 +9,6 @@ from rag_agent.storage import presign_upload_url
 
 logger = logging.getLogger(__name__)
 
-# Fail fast: missing configuration is a deployment error, not a runtime
-# surprise. (Reference repo lesson: os.environ.get() with a silent fallback
-# masked a typo'd key and silently used the wrong model.)
 DOCUMENTS_BUCKET = os.environ["DOCUMENTS_BUCKET"]
 
 
@@ -44,12 +21,6 @@ def _respond(status_code: int, payload: dict) -> dict:
 
 
 def _parse_body(event: dict) -> dict | None:
-    """Decode and JSON-parse the proxy event body.
-
-    Returns the parsed object, or None when the body is absent or malformed
-    (caller replies 400). isBase64Encoded is honored for completeness,
-    although JSON clients never base64-encode their bodies.
-    """
     raw = event.get("body")
     if raw is None:
         return None

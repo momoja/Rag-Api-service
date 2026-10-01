@@ -1,30 +1,3 @@
-"""embed-document Lambda — embeds Chapter 6's staged chunks for Chapter 8.
-
-Triggered by the documents bucket notification on ``processed/*/chunks.jsonl``
-(suffix-filtered to ``.jsonl``, so metadata.json never fires it) — a direct
-S3 event, same record shape as the ingest-document handler documents:
-
-    event = {
-        "Records": [{
-            "eventName": "ObjectCreated:Put",
-            "s3": {
-                "bucket": {"name": "rag-agent-dev-documents-..."},
-                "object": {"key": "processed/<document_id>/chunks.jsonl"},
-            },
-        }]
-    }
-
-All business logic lives in rag_agent.embed; this module is thin glue:
-parse records -> call core -> classify outcomes. Permanent content problems
-(ValueError: bad path, malformed chunk records, model input rejection) are
-skipped so S3 does not retry them forever; transient Bedrock failures
-exhaust their per-text retries (rag_agent.embed.embed_texts) then re-raise
-so S3 retries the whole document — idempotent, because
-``embedded/<document_id>/`` keys derive from the source path and PutObject
-overwrites. Records for keys outside ``processed/<id>/chunks.jsonl`` cannot
-arrive through the notification filters and are ignored defensively.
-"""
-
 import logging
 from urllib.parse import unquote_plus
 

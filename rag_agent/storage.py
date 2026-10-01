@@ -1,16 +1,3 @@
-"""S3 document storage helpers for the self-managed RAG system.
-
-The raw-documents S3 bucket (infra/dev/s3.tf) is the ingestion entry point:
-clients upload via pre-signed URLs, Chapter 6's pipeline reads the objects.
-Key layout: accepted uploads live under ``uploads/`` (the Chapter 6 ingest
-trigger's notification filter prefix); the pipeline stages results under
-``processed/`` in the same bucket.
-
-Design: SDK clients are injectable so this module is fully testable offline
-with a fake client; Lambda handlers (lambda/) wrap these functions with
-event/env glue and never contain business logic.
-"""
-
 import logging
 from typing import Any
 
@@ -22,20 +9,13 @@ MAX_EXPIRES_SECONDS = 3600
 
 MAX_KEY_LENGTH = 1024
 
-# Layout policy: the Chapter 6 ingest trigger watches only this prefix, so
-# every key presign offers a PUT URL for must live under it (see module
-# docstring). Keys outside the prefix are still path-safe but would never be
-# ingested.
 UPLOADS_PREFIX = "uploads/"
 
 _client: Any = None
 
 
 def validate_key(key: str) -> str:
-    """Validate an S3 object key for uploads. Returns the key unchanged.
-
-    Raises ValueError with a client-facing message on invalid keys.
-    """
+    
     if not isinstance(key, str):
         raise ValueError("key must be a string")
     if not key:
@@ -50,12 +30,7 @@ def validate_key(key: str) -> str:
 
 
 def validate_upload_key(key: str) -> str:
-    """Validate a key that will be offered a pre-signed PUT URL.
-
-    Path-safety checks first, then the uploads/ prefix requirement (the
-    Chapter 6 S3 event notification filter). Returns the key unchanged;
-    raises ValueError with a client-facing message otherwise.
-    """
+    
     validate_key(key)
     if not key.startswith(UPLOADS_PREFIX):
         raise ValueError(f"key must start with '{UPLOADS_PREFIX}'")
@@ -63,7 +38,7 @@ def validate_upload_key(key: str) -> str:
 
 
 def _get_client() -> Any:
-    """Lazily build the default S3 client (first call only)."""
+    
     global _client
     if _client is None:
         import boto3
@@ -83,13 +58,7 @@ def presign_upload_url(
     expires_in: int = DEFAULT_EXPIRES_SECONDS,
     s3_client: Any | None = None,
 ) -> dict[str, str | int]:
-    """Return a pre-signed PUT URL for uploading ``key`` to ``bucket``.
-
-    URL generation is client-side signing — no AWS call is made — which is
-    why the function is safe to run and test without credentials.
-
-    Returns a response-contract dict (method/bucket/key/url/expires_in).
-    """
+    
     if not isinstance(bucket, str) or not bucket:
         raise ValueError("bucket must be a non-empty string")
     if not MIN_EXPIRES_SECONDS <= expires_in <= MAX_EXPIRES_SECONDS:

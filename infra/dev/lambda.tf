@@ -1,9 +1,4 @@
-# presign-document Lambda (Chapter 4's first function).
-#
-# Container-image deployment: image is built/pushed from lambda/presign_document/
-# (see its Dockerfile); this file defines the repo, least-privilege execution
-# role, log group, and the function itself. The image URI is resolved at apply
-# time — deploy order is: infra apply (repo first), push image, apply again.
+# presign-document Lambda 
 
 locals {
   presign_function_name = "${var.project}-${var.environment}-presign-document"
@@ -40,8 +35,7 @@ data "aws_iam_policy_document" "presign_role_policy" {
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["arn:aws:logs:${var.region}:${local.account_id}:log-group:${local.presign_log_group}:log-stream:*"]
   }
-  # Pre-signed URLs are signed client-side, so the function itself never calls
-  # S3 — but the permission documents intent and covers future PUT-backed flows.
+  
   statement {
     actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.documents.arn}/*"]
@@ -78,6 +72,5 @@ resource "aws_lambda_function" "presign_document" {
     }
   }
 
-  # Function creation races the log group; group pre-exists on deploy.
   depends_on = [aws_cloudwatch_log_group.presign_lambda]
 }

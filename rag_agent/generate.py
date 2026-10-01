@@ -1,28 +1,3 @@
-"""Chapter 10 generation core: retrieved context -> explicit prompt -> LLM.
-
-The final RAG stage. Chapter 9's retriever stays untouched beneath this
-module: the answer path is retrieval plus a deliberately explicit prompt,
-so retrieval quality is never entangled with generation.
-
-Flow:
-
-    question
-        -> retrieve (rag_agent.retrieval: embed query, cosine top-K)
-        -> build_prompt: numbered context, verbatim chunk text, the
-           question, and a strict "answer only from context, cite [n]"
-           instruction — context injection is explicit, nothing hidden
-        -> Bedrock LLM (Claude via the Messages API)
-        -> {"answer", "sources", "question"}
-
-If retrieval returns nothing, no LLM call is made (no point spending
-tokens) and the answer states that no relevant documents were found.
-
-Model config (decision, ch10): Claude Haiku by default — fast and cheap
-for dev-scale answers over 1200-char chunks; swap by changing the one
-constant (and the IAM model ARN in infra if the model family changes).
-Model availability is checked at apply time, not here.
-"""
-
 import json
 from functools import partial
 
@@ -43,11 +18,7 @@ _SYSTEM_PROMPT = (
 
 
 def build_prompt(question: str, results: list[dict]) -> str:
-    """Build the user prompt: numbered context, then the question.
 
-    ``results`` is the retrieval contract list (document_id, chunk_index,
-    text, distance). Pure and deterministic — pinned by tests.
-    """
     if not isinstance(question, str) or not question.strip():
         raise ValueError("question must not be empty")
     if not results:
@@ -75,17 +46,7 @@ def generate_answer(
     max_tokens: int = GENERATION_MAX_TOKENS,
     model_id: str = GENERATION_MODEL_ID,
 ) -> dict:
-    """Answer ``question`` from retrieved context via the Bedrock LLM.
-
-    Validation of question/top_k/document_id is delegated to
-    rag_agent.retrieval.retrieve (ValueError on client-correctable input).
-    No LLM call when retrieval finds nothing — returns a plain
-    "no relevant documents" answer with empty sources.
-
-    Returns ``{"question", "answer", "sources", "model_id"}`` where
-    ``sources`` is the retrieval result list (ranked, with text), enabling
-    citation and downstream checks of what the answer was built from.
-    """
+    
     result = retrieve(
         question,
         conn=conn,

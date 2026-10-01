@@ -1,38 +1,3 @@
-"""Chapter 7 embedding core: embed Chapter 6's chunk output with Amazon
-Bedrock Titan, staged for the (Chapter 8) vector store.
-
-Why embeddings: RAG retrieval must find the chunks *relevant* to a question,
-not just the ones sharing literal keywords. An embedding model maps text to a
-fixed-dimension vector such that semantically similar text lands closer
-together; cosine distance over those vectors is the relevance ranking the
-(Chapter 9) retriever will use. Chunk-level vectors are computed at ingest
-time so retrieval stays one fast vector lookup plus a Bedrock query-embed
-call — never a scan of raw text.
-
-Model/config contract (decision 5): Amazon Titan Text Embeddings V2
-(``amazon.titan-embed-text-v2:0``), 1024 dimensions, normalized output
-(cosine == dot product). The dimension is a hard contract the Chapter 8
-vector-store index must honor. Input limit is 8192 tokens; the Chapter 6
-chunker (1200 chars, ~300 tokens) keeps every chunk far below it.
-
-Layout: reads ``processed/<document_id>/chunks.jsonl`` (written by Chapter
-6's ingest-document Lambda) and writes
-``embedded/<document_id>/embeddings.jsonl`` — one JSON object per line:
-``{index, text, embedding, input_text_token_count, start, end}``. ``text``
-travels with the vector so the Chapter 9 retriever can return context
-without a second read. Keys derive from the source path, so re-running a
-document overwrites its embeddings (idempotent).
-
-Error/retry strategy: Bedrock calls are individually retried with bounded
-exponential backoff (default 3 attempts) for transient failures only
-(throttling, model timeout/error, service unavailability, internal server,
-network). Validation failures (bad input text, wrong parameters) are
-permanent — raised as ValueError so the Lambda skips the document instead
-of retrying forever. Misconfiguration (access denied, missing model) is
-also permanent but deliberately NOT ValueError: it keeps failing loudly
-until a human fixes the deployment.
-"""
-
 import json
 import logging
 from typing import Any
@@ -78,13 +43,7 @@ def embed_text(
     normalize: bool = EMBEDDING_NORMALIZE,
     bedrock_client: Any | None = None,
 ) -> dict:
-    """Embed one text via Bedrock Titan and return the model response.
-
-    Returns ``{"embedding": [...], "input_text_token_count": N}``.
-
-    Raises ValueError for permanent input problems (model rejects the text);
-    transient Bedrock failures propagate untouched so callers can retry.
-    """
+    
     if not isinstance(text, str) or not text:
         raise ValueError("text must be a non-empty string")
 
@@ -119,13 +78,6 @@ def embed_texts(
     dimensions: int = EMBEDDING_DIMENSIONS,
     normalize: bool = EMBEDDING_NORMALIZE,
 ) -> list[dict]:
-    """Embed each text with bounded retry on transient failures.
-
-    Retry behavior (classification, backoff, exhaustion) lives in
-    rag_agent.bedrock.retry_call — shared with the generation path. A text
-    that exhausts its retries raises the last error; the caller (Lambda)
-    lets S3 retry the whole document, which is idempotent.
-    """
     if not isinstance(retry_attempts, int) or isinstance(retry_attempts, bool):
         raise ValueError("retry_attempts must be an integer")
     if retry_attempts < 1:
@@ -151,6 +103,7 @@ def embed_texts(
     ]
 
 
+# converts JSONL into Python dictionaries
 def _parse_chunks(data: bytes) -> list[dict]:
     """Parse chunks.jsonl into the chunk records to embed."""
     chunks: list[dict] = []
@@ -182,15 +135,6 @@ def embed_document(
     bedrock_client: Any | None = None,
     retry_attempts: int = DEFAULT_RETRY_ATTEMPTS,
 ) -> dict:
-    """Embed one document's chunks and stage ``embedded/<doc_id>/embeddings.jsonl``.
-
-    ``chunks_key`` must be ``processed/<document_id>/chunks.jsonl``; the
-    document_id is derived from the path, so re-running the same source
-    overwrites the same embeddings key (idempotent).
-
-    Raises ValueError on permanent content problems (bad path, malformed
-    chunk records, model input rejection). Returns a summary dict.
-    """
     if not isinstance(bucket, str) or not bucket:
         raise ValueError("bucket must be a non-empty string")
     if not isinstance(chunks_key, str) or not chunks_key.startswith(PROCESSED_PREFIX):

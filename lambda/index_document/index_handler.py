@@ -1,25 +1,3 @@
-"""index-document Lambda — loads Chapter 7's staged embeddings into pgvector.
-
-Triggered by the documents bucket notification on ``embedded/*.jsonl`` (the
-third target: prefix ``embedded/``, suffix ``.jsonl``), so exactly the
-vector files the embed-document Lambda stages — never chunks.jsonl or raw
-uploads. Same direct S3 event shape as the ingest/embed handlers.
-
-Flow per record: bucket/key from the event -> rag_agent.vector.index_document
-(fetch the file, validate records, ``replace_document`` into rag_chunks).
-Re-indexing a document_id replaces its rows, so a transient failure that S3
-retries converges to the same state (idempotent). Permanent content
-problems (ValueError: bad key, malformed records, wrong dimensions) are
-skipped so S3 never retries them forever.
-
-Database connection — environment glue, deliberately not in the core:
-- ``DB_DSN``: full libpq connection string (local/dev: compose pgvector).
-- ``SECRET_ARN``: AWS Secrets Manager secret holding ``{"host", "port",
-  "dbname", "username", "password"}`` (production RDS; the function runs in
-  the RDS VPC).
-Missing both is a deployment error: the first invocation fails loudly.
-"""
-
 import json
 import logging
 import os
@@ -43,8 +21,7 @@ def _is_embeddings_key(key: str) -> bool:
     return key.startswith(EMBEDDED_PREFIX) and key.endswith(_EMBEDDINGS_SUFFIX)
 
 
-def _get_s3():
-    """Lazily build the default S3 client (first call only)."""
+def _get_s3():  
     global _s3_client
     if _s3_client is None:
         import boto3
@@ -54,7 +31,6 @@ def _get_s3():
 
 
 def _connect():
-    """Build a psycopg connection from DB_DSN or the SECRET_ARN secret."""
     dsn = os.environ.get("DB_DSN")
     if dsn:
         return psycopg.connect(dsn, connect_timeout=10)
@@ -77,7 +53,6 @@ def _connect():
 
 
 def _get_conn():
-    """One connection per invocation, reused across records."""
     global _conn
     if _conn is None:
         _conn = _connect()
