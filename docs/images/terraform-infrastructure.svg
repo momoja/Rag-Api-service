@@ -1,0 +1,176 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1000" viewBox="0 0 1500 1000" font-family="Segoe UI, Helvetica, Arial, sans-serif" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYToyM2Y0OTczZS0xZjBiLTRmMGUtOTczYS1iZDk5NjU0NTM0MTQAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaDPwvX0d3YY0JZBghCMgSbMAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDoxYjk4MjE4Yy02OTg3LTRiYzUtYmFiZi1jZjA4Y2QwMWExZmFscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoW2DqdXCUr7Z0ozbGlChj4QAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggkBEpeiXDtA40TaPy8MDvjegiv8nRa8ADinF6FFSFMNykZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaBBYOC6BsgO0lcMS3GWWALwAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCCgaLiv6reDXczaQeMlEObbKFaVlQFNnbpX423ttFe9fmRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjPZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjIzZjQ5NzNlLTFmMGItNGYwZS05NzNhLWJkOTk2NTQ1MzQxNC9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjQwNjYwZDAyLTAwZGUtNDkwMy1iYmEyLTk0MDgxZDY1OTUyOXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCCQESl6JcO0DjRNo/LwwO+N6CK/ydFrwAOKcXoUVIUw3KJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggWTryNqVetrCennJpxe+mCNjzojjxbVLmh74WsIAeRS6iY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggVyl6kWZHyG73rl3KwYwa/5bQ0R3sAJ65mGckzcxxX2N0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQOEFJH9nAieIFD9yWlqigElf9HRItmU8nUdVWmD4BbJTM0iuK3ulKbz0plhZFobEdDan+JBQNl7MIO1LN4j15qY=</c2pa:manifest></metadata>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7B42BC"/></marker></defs>
+<rect width="1500" height="1000" fill="#FFFFFF"/>
+<text x="30" y="40" font-size="22" font-weight="700" fill="#16191F">RAG API Service — Terraform layout (infra/dev)</text>
+<text x="1470" y="40" text-anchor="end" font-size="13" fill="#414D5C">Terraform ≥ 1.9 · hashicorp/aws ~&gt; 5.0 · one file per concern</text>
+<rect x="30" y="150" width="345" height="148" rx="10" fill="#FFFFFF" stroke="#5A6B86" stroke-width="2"/>
+<path d="M30,160 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#5A6B86"/>
+<text x="44" y="173" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">main.tf</text>
+<text x="363" y="173" text-anchor="end" font-size="11" fill="#FFFFFF">Config</text>
+<text xml:space="preserve" x="44" y="206" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">provider aws ~&gt; 5.0 · random ~&gt; 3.6</text>
+<text xml:space="preserve" x="44" y="224" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">default_tags: Project / Environment</text>
+<text xml:space="preserve" x="44" y="242" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">data.aws_caller_identity.current</text>
+<text xml:space="preserve" x="44" y="260" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">local.documents_bucket_name</text>
+<rect x="395" y="150" width="345" height="148" rx="10" fill="#FFFFFF" stroke="#5A6B86" stroke-width="2"/>
+<path d="M395,160 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#5A6B86"/>
+<text x="409" y="173" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">variables.tf + dev.tfvars</text>
+<text x="728" y="173" text-anchor="end" font-size="11" fill="#FFFFFF">Config</text>
+<text xml:space="preserve" x="409" y="206" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">region = "us-east-1"</text>
+<text xml:space="preserve" x="409" y="224" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">project = "rag-agent"</text>
+<text xml:space="preserve" x="409" y="242" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">environment = "dev"</text>
+<text xml:space="preserve" x="409" y="260" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">alarm_email = "" (optional)</text>
+<rect x="760" y="150" width="345" height="148" rx="10" fill="#FFFFFF" stroke="#5A6B86" stroke-width="2"/>
+<path d="M760,160 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#5A6B86"/>
+<text x="774" y="173" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">outputs.tf</text>
+<text x="1093" y="173" text-anchor="end" font-size="11" fill="#FFFFFF">Config</text>
+<text xml:space="preserve" x="774" y="206" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">api_invoke_url</text>
+<text xml:space="preserve" x="774" y="224" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">documents_bucket_name</text>
+<text xml:space="preserve" x="774" y="242" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">cognito_user_pool_id</text>
+<text xml:space="preserve" x="774" y="260" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">cognito_client_id</text>
+<rect x="1125" y="150" width="345" height="148" rx="10" fill="#FFFFFF" stroke="#3F8624" stroke-width="2"/>
+<path d="M1125,160 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#3F8624"/>
+<text x="1139" y="173" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">s3.tf</text>
+<text x="1458" y="173" text-anchor="end" font-size="11" fill="#FFFFFF">Storage</text>
+<text xml:space="preserve" x="1139" y="206" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_s3_bucket.documents</text>
+<text xml:space="preserve" x="1139" y="224" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">…_versioning (Enabled)</text>
+<text xml:space="preserve" x="1139" y="242" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">…_server_side_encryption_configuration</text>
+<text xml:space="preserve" x="1139" y="260" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">…_public_access_block</text>
+<text xml:space="preserve" x="1139" y="278" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">…_cors_configuration</text>
+<rect x="30" y="318" width="345" height="184" rx="10" fill="#FFFFFF" stroke="#ED7100" stroke-width="2"/>
+<path d="M30,328 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#ED7100"/>
+<text x="44" y="341" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">lambda.tf  ·  presign</text>
+<text x="363" y="341" text-anchor="end" font-size="11" fill="#FFFFFF">Compute</text>
+<text xml:space="preserve" x="44" y="374" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_ecr_repository.presign_document</text>
+<text xml:space="preserve" x="44" y="392" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_iam_role / _role_policy</text>
+<text xml:space="preserve" x="44" y="410" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_cloudwatch_log_group</text>
+<text xml:space="preserve" x="44" y="428" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_lambda_function.presign_document</text>
+<text xml:space="preserve" x="44" y="446" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  128 MB · 30 s · Image</text>
+<rect x="395" y="318" width="345" height="184" rx="10" fill="#FFFFFF" stroke="#8C4FFF" stroke-width="2"/>
+<path d="M395,328 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#8C4FFF"/>
+<text x="409" y="341" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">api_gateway.tf</text>
+<text x="728" y="341" text-anchor="end" font-size="11" fill="#FFFFFF">Networking / API</text>
+<text xml:space="preserve" x="409" y="374" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_apigatewayv2_api (HTTP, CORS)</text>
+<text xml:space="preserve" x="409" y="392" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_apigatewayv2_integration.presign</text>
+<text xml:space="preserve" x="409" y="410" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">route POST /documents/upload-url</text>
+<text xml:space="preserve" x="409" y="428" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_apigatewayv2_stage.$default</text>
+<text xml:space="preserve" x="409" y="446" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_lambda_permission (apigateway)</text>
+<rect x="760" y="318" width="345" height="184" rx="10" fill="#FFFFFF" stroke="#DD344C" stroke-width="2"/>
+<path d="M760,328 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#DD344C"/>
+<text x="774" y="341" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">auth.tf</text>
+<text x="1093" y="341" text-anchor="end" font-size="11" fill="#FFFFFF">Security / Identity</text>
+<text xml:space="preserve" x="774" y="374" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_cognito_user_pool.users</text>
+<text xml:space="preserve" x="774" y="392" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  admin-create-only · 12+ char pw</text>
+<text xml:space="preserve" x="774" y="410" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_cognito_user_pool_client.app</text>
+<text xml:space="preserve" x="774" y="428" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_apigatewayv2_authorizer (JWT)</text>
+<rect x="1125" y="318" width="345" height="184" rx="10" fill="#FFFFFF" stroke="#ED7100" stroke-width="2"/>
+<path d="M1125,328 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#ED7100"/>
+<text x="1139" y="341" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">ingest_lambda.tf</text>
+<text x="1458" y="341" text-anchor="end" font-size="11" fill="#FFFFFF">Compute</text>
+<text xml:space="preserve" x="1139" y="374" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_ecr_repository.ingest_document</text>
+<text xml:space="preserve" x="1139" y="392" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_iam_role / _role_policy</text>
+<text xml:space="preserve" x="1139" y="410" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_lambda_function.ingest_document</text>
+<text xml:space="preserve" x="1139" y="428" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_s3_bucket_notification:</text>
+<text xml:space="preserve" x="1139" y="446" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  uploads/ → ingest</text>
+<text xml:space="preserve" x="1139" y="464" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  processed/*.jsonl → embed</text>
+<text xml:space="preserve" x="1139" y="482" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  embedded/*.jsonl → index</text>
+<rect x="30" y="522" width="345" height="202" rx="10" fill="#FFFFFF" stroke="#ED7100" stroke-width="2"/>
+<path d="M30,532 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#ED7100"/>
+<text x="44" y="545" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">embed_lambda.tf</text>
+<text x="363" y="545" text-anchor="end" font-size="11" fill="#FFFFFF">Compute</text>
+<text xml:space="preserve" x="44" y="578" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_ecr_repository.embed_document</text>
+<text xml:space="preserve" x="44" y="596" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_iam_role (bedrock:InvokeModel</text>
+<text xml:space="preserve" x="44" y="614" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  on titan-embed-text-v2:0)</text>
+<text xml:space="preserve" x="44" y="632" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_cloudwatch_log_group</text>
+<text xml:space="preserve" x="44" y="650" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_lambda_function.embed_document</text>
+<text xml:space="preserve" x="44" y="668" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_lambda_permission (s3)</text>
+<rect x="395" y="522" width="345" height="202" rx="10" fill="#FFFFFF" stroke="#2E73B8" stroke-width="2"/>
+<path d="M395,532 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#2E73B8"/>
+<text x="409" y="545" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">vector_store.tf</text>
+<text x="728" y="545" text-anchor="end" font-size="11" fill="#FFFFFF">Database</text>
+<text xml:space="preserve" x="409" y="578" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">data aws_vpc / aws_subnets (default)</text>
+<text xml:space="preserve" x="409" y="596" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_security_group × 2</text>
+<text xml:space="preserve" x="409" y="614" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">random_password.index_db</text>
+<text xml:space="preserve" x="409" y="632" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_db_subnet_group.index</text>
+<text xml:space="preserve" x="409" y="650" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_db_instance.index</text>
+<text xml:space="preserve" x="409" y="668" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  postgres 16.4 · db.t4g.micro · 20 GB</text>
+<text xml:space="preserve" x="409" y="686" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_secretsmanager_secret (+ version)</text>
+<text xml:space="preserve" x="409" y="704" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_lambda_function.index_document (VPC)</text>
+<rect x="760" y="522" width="345" height="202" rx="10" fill="#FFFFFF" stroke="#ED7100" stroke-width="2"/>
+<path d="M760,532 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#ED7100"/>
+<text x="774" y="545" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">retrieve_lambda.tf</text>
+<text x="1093" y="545" text-anchor="end" font-size="11" fill="#FFFFFF">Compute</text>
+<text xml:space="preserve" x="774" y="578" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_security_group.retrieve_lambda</text>
+<text xml:space="preserve" x="774" y="596" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_ecr_repository.retrieve_document</text>
+<text xml:space="preserve" x="774" y="614" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_iam_role (titan + claude-3-5-haiku)</text>
+<text xml:space="preserve" x="774" y="632" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_lambda_function.retrieve_document</text>
+<text xml:space="preserve" x="774" y="650" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  VPC · 256 MB · 60 s</text>
+<text xml:space="preserve" x="774" y="668" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">integration + routes:</text>
+<text xml:space="preserve" x="774" y="686" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  POST /documents/search</text>
+<text xml:space="preserve" x="774" y="704" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  POST /documents/answer</text>
+<rect x="1125" y="522" width="345" height="202" rx="10" fill="#FFFFFF" stroke="#8C4FFF" stroke-width="2"/>
+<path d="M1125,532 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#8C4FFF"/>
+<text x="1139" y="545" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">vpc_endpoints.tf</text>
+<text x="1458" y="545" text-anchor="end" font-size="11" fill="#FFFFFF">Networking / API</text>
+<text xml:space="preserve" x="1139" y="578" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_security_group.vpc_endpoints</text>
+<text xml:space="preserve" x="1139" y="596" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_vpc_endpoint.s3 (Gateway)</text>
+<text xml:space="preserve" x="1139" y="614" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_vpc_endpoint.secretsmanager</text>
+<text xml:space="preserve" x="1139" y="632" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_vpc_endpoint.bedrock_runtime</text>
+<text xml:space="preserve" x="1139" y="650" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  (Interface endpoints)</text>
+<rect x="30" y="744" width="345" height="166" rx="10" fill="#FFFFFF" stroke="#E7157B" stroke-width="2"/>
+<path d="M30,754 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#E7157B"/>
+<text x="44" y="767" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">dlq.tf</text>
+<text x="363" y="767" text-anchor="end" font-size="11" fill="#FFFFFF">Operations</text>
+<text xml:space="preserve" x="44" y="800" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_sqs_queue.dead_letter</text>
+<text xml:space="preserve" x="44" y="818" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  for_each: ingest · embed · index</text>
+<text xml:space="preserve" x="44" y="836" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_lambda_function_event_invoke_config</text>
+<text xml:space="preserve" x="44" y="854" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  2 retries · 1 h max event age</text>
+<text xml:space="preserve" x="44" y="872" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  on_failure → DLQ</text>
+<rect x="395" y="744" width="345" height="166" rx="10" fill="#FFFFFF" stroke="#E7157B" stroke-width="2"/>
+<path d="M395,754 a10,10 0 0 1 10,-10 h325 a10,10 0 0 1 10,10 v24 h-345 z" fill="#E7157B"/>
+<text x="409" y="767" font-size="14.5" font-weight="700" fill="#FFFFFF" font-family="Consolas, Menlo, monospace">observability.tf</text>
+<text x="728" y="767" text-anchor="end" font-size="11" fill="#FFFFFF">Operations</text>
+<text xml:space="preserve" x="409" y="800" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_sns_topic.alarms (+ email sub)</text>
+<text xml:space="preserve" x="409" y="818" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">aws_cloudwatch_metric_alarm:</text>
+<text xml:space="preserve" x="409" y="836" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  errors × 5 · throttles × 5</text>
+<text xml:space="preserve" x="409" y="854" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  dlq_depth × 3 · api_5xx</text>
+<text xml:space="preserve" x="409" y="872" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  db_free_storage · db_cpu</text>
+<text xml:space="preserve" x="409" y="890" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">  = 16 alarms</text>
+<rect x="760" y="744" width="710" height="166" rx="10" fill="#F7F8FA" stroke="#232F3E" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="776" y="770" font-size="14.5" font-weight="700" fill="#16191F">How the files wire together</text>
+<text xml:space="preserve" x="776" y="796" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">s3.tf ──notification──▶ ingest / embed / index Lambdas (ingest_lambda.tf)</text>
+<text xml:space="preserve" x="776" y="815" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">auth.tf ──JWT authorizer──▶ every route in api_gateway.tf + retrieve_lambda.tf</text>
+<text xml:space="preserve" x="776" y="834" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">vector_store.tf ──secret ARN──▶ index + retrieve Lambdas (SECRET_ARN env)</text>
+<text xml:space="preserve" x="776" y="853" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">vpc_endpoints.tf ──443 from SGs──▶ index + retrieve reach S3 / Secrets / Bedrock</text>
+<text xml:space="preserve" x="776" y="872" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">dlq.tf ──for_each──▶ ingest · embed · index ;  observability.tf watches all 5 fns</text>
+<text xml:space="preserve" x="776" y="891" font-size="12.5" fill="#16191F" font-family="Consolas, Menlo, monospace">lambda/*/Dockerfile ──docker push──▶ the 5 aws_ecr_repository resources</text>
+<rect x="30" y="70" width="330" height="56" rx="28" fill="#F4F0FF" stroke="#7B42BC" stroke-width="2"/>
+<text x="195.0" y="94" text-anchor="middle" font-size="14" font-weight="700" fill="#4B2A82" font-family="Consolas, Menlo, monospace">terraform init</text>
+<text x="195.0" y="113" text-anchor="middle" font-size="12" fill="#5A4A7A">providers + lock file</text>
+<path d="M364,98 H394" stroke="#7B42BC" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="400" y="70" width="330" height="56" rx="28" fill="#F4F0FF" stroke="#7B42BC" stroke-width="2"/>
+<text x="565.0" y="94" text-anchor="middle" font-size="14" font-weight="700" fill="#4B2A82" font-family="Consolas, Menlo, monospace">terraform plan -var-file=dev.tfvars</text>
+<text x="565.0" y="113" text-anchor="middle" font-size="12" fill="#5A4A7A">preview · no cost</text>
+<path d="M734,98 H764" stroke="#7B42BC" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="770" y="70" width="330" height="56" rx="28" fill="#F4F0FF" stroke="#7B42BC" stroke-width="2"/>
+<text x="935.0" y="94" text-anchor="middle" font-size="14" font-weight="700" fill="#4B2A82" font-family="Consolas, Menlo, monospace">push 5 images to ECR</text>
+<text x="935.0" y="113" text-anchor="middle" font-size="12" fill="#5A4A7A">:latest per function</text>
+<path d="M1104,98 H1134" stroke="#7B42BC" stroke-width="2" marker-end="url(#arr)"/>
+<rect x="1140" y="70" width="330" height="56" rx="28" fill="#F4F0FF" stroke="#7B42BC" stroke-width="2"/>
+<text x="1305.0" y="94" text-anchor="middle" font-size="14" font-weight="700" fill="#4B2A82" font-family="Consolas, Menlo, monospace">terraform apply</text>
+<text x="1305.0" y="113" text-anchor="middle" font-size="12" fill="#5A4A7A">creates billable resources</text>
+<rect x="30" y="952" width="14" height="14" rx="3" fill="#5A6B86"/>
+<text x="50" y="964" font-size="12.5" fill="#414D5C">Config</text>
+<rect x="106" y="952" width="14" height="14" rx="3" fill="#ED7100"/>
+<text x="126" y="964" font-size="12.5" fill="#414D5C">Compute</text>
+<rect x="189" y="952" width="14" height="14" rx="3" fill="#3F8624"/>
+<text x="209" y="964" font-size="12.5" fill="#414D5C">Storage</text>
+<rect x="272" y="952" width="14" height="14" rx="3" fill="#8C4FFF"/>
+<text x="292" y="964" font-size="12.5" fill="#414D5C">Networking / API</text>
+<rect x="418" y="952" width="14" height="14" rx="3" fill="#DD344C"/>
+<text x="438" y="964" font-size="12.5" fill="#414D5C">Security / Identity</text>
+<rect x="585" y="952" width="14" height="14" rx="3" fill="#2E73B8"/>
+<text x="605" y="964" font-size="12.5" fill="#414D5C">Database</text>
+<rect x="675" y="952" width="14" height="14" rx="3" fill="#E7157B"/>
+<text x="695" y="964" font-size="12.5" fill="#414D5C">Operations</text>
+<text x="1470" y="964" text-anchor="end" font-size="12" fill="#414D5C">CI runs terraform fmt -check + validate only — plan/apply are manual. State is local (no remote backend yet).</text>
+</svg>
