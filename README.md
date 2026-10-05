@@ -288,4 +288,4 @@ This project was built incrementally, one chapter at a time:
 
 ## Acknowledgements
 
-The architecture was informed by AWS's [advanced-rag-assistant sample](https://github.com/aws-samples/samples-for-rag-solutions/tree/main/advanced-rag-assistant). It was studied for design ideas only, and this implementation is original.
+The architecture of this project was informed by AWS's Advanced RAG Assistant sample. The sample was studied for architectural and design inspiration; this implementation was developed independently.
